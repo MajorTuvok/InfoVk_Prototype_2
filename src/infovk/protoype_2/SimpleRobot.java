@@ -1112,15 +1112,11 @@ class Bullet {
  * implement an actual behavior. All actions will be queued up and executed when
  * the method returns.
  */
-abstract class SimpleRobotBehavior<T extends SimpleRobot> {
-    private T robot;
+abstract class SimpleRobotBehavior {
+    private SimpleRobot robot;
 
-    SimpleRobotBehavior(T robot) {
+    SimpleRobotBehavior(SimpleRobot robot) {
         this.robot = robot;
-    }
-
-    public T getRobot() {
-        return robot;
     }
 
     /**

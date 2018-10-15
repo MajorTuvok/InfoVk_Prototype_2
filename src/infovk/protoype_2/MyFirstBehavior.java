@@ -1,6 +1,6 @@
 package infovk.protoype_2;
 
-public class MyFirstBehavior extends SimpleRobotBehavior<SimpleRobot> {
+public class MyFirstBehavior extends SimpleRobotBehavior {
     //Ged�chtnissektion
 
     public MyFirstBehavior(SimpleRobot robot) {
@@ -16,7 +16,6 @@ public class MyFirstBehavior extends SimpleRobotBehavior<SimpleRobot> {
     void execute() {
         ahead(10);
     }
-
 
     //Eigene Funktionen Sektion
 }
