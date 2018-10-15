@@ -1,4 +1,4 @@
-package infovk.e_heydrich18;
+package infovk.protoype_2;
 
 public class MyFirstBehavior extends SimpleRobotBehavior {
     //Ged�chtnissektion

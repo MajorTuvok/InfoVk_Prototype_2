@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://robocode.sourceforge.net/license/epl-v10.html
  */
-package infovk.e_heydrich18;
+package infovk.protoype_2;
 
 
 import robocode.AdvancedRobot;

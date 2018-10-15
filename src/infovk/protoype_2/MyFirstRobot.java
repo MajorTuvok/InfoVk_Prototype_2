@@ -1,4 +1,4 @@
-package infovk.e_heydrich18;
+package infovk.protoype_2;
 
 public class MyFirstRobot extends SimpleRobot {
     public MyFirstRobot() {
