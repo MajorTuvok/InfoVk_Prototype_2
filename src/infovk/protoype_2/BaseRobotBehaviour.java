@@ -5,4 +5,6 @@ public abstract class BaseRobotBehaviour<T extends RobotBase> extends SimpleRobo
     public BaseRobotBehaviour(T robot) {
         super(robot);
     }
+
+
 }

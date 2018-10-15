@@ -14,7 +14,7 @@ turnRadar(720);
 
     @Override
     void execute() {
-      /* for (ScannedRobotEvent event : getScannedRobotEvents()) {
+      /*for (ScannedRobotEvent event : getScannedRobotEvents()) {
 
             double bearing = event.getBearing();
             double absoluteBearing = bearing + getHeading();
@@ -22,8 +22,7 @@ turnRadar(720);
             double toTurn = Utils.normalRelativeAngle(absoluteBearing - radarHeading);
             toTurn = toTurn > 0 ? toTurn + 5 : toTurn - 5;
             turnRadar(toTurn);
-            //turn(event.getBearing());
-            double gunDirection = getGunHeading();
+            //turn(event.getBearing()); double gunDirection = getGunHeading();
             double gunTurn = Utils.normalRelativeAngle(absoluteBearing - gunDirection);
             turnGun(gunTurn);
             fireBullet(1.75);
