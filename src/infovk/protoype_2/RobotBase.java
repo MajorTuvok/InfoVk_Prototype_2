@@ -2,16 +2,26 @@ package infovk.protoype_2;
 
 public class RobotBase extends SimpleRobot {
     private double energyPowerFactor;
+    private double disFactor;
     public RobotBase() {
         setEnergyPowerFactor(50);
+        setDisFactor(25);
     }
 
-    public double getEnergyPowerFactor() {
+    protected double getEnergyPowerFactor() {
         return energyPowerFactor;
     }
 
-    public void setEnergyPowerFactor(double energyPowerFactor) {
+    protected void setEnergyPowerFactor(double energyPowerFactor) {
         this.energyPowerFactor = energyPowerFactor;
+    }
+
+    protected double getDisFactor() {
+        return disFactor;
+    }
+
+    protected void setDisFactor(double disFactor) {
+        this.disFactor = disFactor;
     }
 
     @Override
@@ -47,6 +57,10 @@ public class RobotBase extends SimpleRobot {
     }
 
     protected void fireRelativeToEnergy(double baseVal) {
-        fire(baseVal * getEnergy() / 50);
+        fire(Math.max(Math.min(baseVal * getEnergy() / 50, 3), 1));
+    }
+
+    protected void fireRelativeToEnergyAndDistance(double baseVal, double distance) {
+        fireRelativeToEnergy(baseVal - (int) distance / disFactor);
     }
 }
