@@ -14,7 +14,7 @@ turnRadar(720);
 
     @Override
     void execute() {
-        for (ScannedRobotEvent event : getScannedRobotEvents()) {
+      /* for (ScannedRobotEvent event : getScannedRobotEvents()) {
 
             double bearing = event.getBearing();
             double absoluteBearing = bearing + getHeading();
@@ -29,10 +29,11 @@ turnRadar(720);
             fireBullet(1.75);
 
         }
-        ahead(100);
+        */
+        }
 
 
-    }
+
 
     //Eigene Funktionen Sektion
 }
