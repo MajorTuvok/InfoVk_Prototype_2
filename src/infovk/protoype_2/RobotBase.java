@@ -1,7 +1,5 @@
 package infovk.protoype_2;
 
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 import infovk.protoype_2.helper.RobotCache;
 import infovk.protoype_2.helper.RobotCache.PositionalRobotCache;
 import robocode.Bullet;
@@ -15,10 +13,12 @@ public class RobotBase extends SimpleRobot {
     private double energyPowerFactor;
     private double disFactor;
     private RobotHistory mHistory;
+    private List<Double> mBullets;
     public RobotBase() {
-        setEnergyPowerFactor(50);
-        setDisFactor(25);
+        setEnergyPowerFactor(40);
+        setDisFactor(50);
         mHistory = new RobotHistory();
+        mBullets = new LinkedList<>();
     }
 
     protected double getEnergyPowerFactor() {
@@ -44,21 +44,13 @@ public class RobotBase extends SimpleRobot {
     }
 
     @Override
-    public void run() {
+    public void setFire(double power) {
+        mBullets.add(power);
+    }
 
-        if (behavior != null) {
-            behavior.start();
-        }
-        start();
-        execute();
-
-        while (true) {
-            if (behavior != null) {
-                behavior.execute();
-            }
-            loop();
-            execute();
-        }
+    @Override
+    public Bullet setFireBullet(double power) {
+        throw new UnsupportedOperationException("No longer supported!");
     }
 
     protected void setAdjustToTurns() {
@@ -71,7 +63,6 @@ public class RobotBase extends SimpleRobot {
         return mHistory.getRecentCacheForTarget(target);
     }
 
-    @Nullable
     protected PositionalRobotCache getCache(String target, int index) {
         return mHistory.getCache(target, index);
     }
@@ -85,17 +76,47 @@ public class RobotBase extends SimpleRobot {
     }
 
     @Override
-    public void setFire(double power) {
-        super.setFire(power);
+    public void run() {
+
+        if (behavior != null) {
+            behavior.start();
+        }
+        start();
+        execute();
+
+        while (true) {
+            performFire();
+
+            if (behavior != null) {
+                behavior.execute();
+            }
+            loop();
+            execute();
+        }
     }
 
-    @Override
-    public Bullet setFireBullet(double power) {
-        return super.setFireBullet(power);
+    protected double getEstimatedVelocity(String target) {
+        Set<PositionalRobotCache> caches = mHistory.getCompleteCacheForTarget(target);
+        double fac = 1;
+        int count = caches.size() - 1;
+        double velocity = 0;
+        for (PositionalRobotCache cache : caches) {
+            if (count >= 1) fac /= 2;
+            velocity += fac * count * cache.getVelocity();
+            count--;
+        }
+        return velocity;
     }
 
     protected void fireRelativeToEnergy(double baseVal) {
-        fire(Math.max(Math.min(baseVal * getEnergy() / 50, 3), 0.1));
+        fire(Math.max(Math.min(baseVal * getEnergy() / energyPowerFactor, 4), 0.1));
+    }
+
+    private void performFire() {
+        if (getGunTurnRemaining() != 0) return;
+        for (Double d : mBullets) {
+            super.setFire(d);
+        }
     }
 
     protected void fireRelativeToEnergyAndDistance(double baseVal, double distance) {
@@ -121,12 +142,12 @@ public class RobotBase extends SimpleRobot {
             targets.put(event.getName(), set);
         }
 
-        @Nullable
+
         private PositionalRobotCache getCache(String target, int index) {
             if (index == 0) {
                 return getRecentCacheForTarget(target);
             }
-            SortedSet<PositionalRobotCache> set = getCacheForTarget(target);
+            SortedSet<PositionalRobotCache> set = getCompleteCacheForTarget(target);
             if (set == null || set.isEmpty()) return null;
             int count = 0;
             for (PositionalRobotCache cache : set) {
@@ -137,8 +158,8 @@ public class RobotBase extends SimpleRobot {
             return null;
         }
 
-        @NotNull
-        private SortedSet<PositionalRobotCache> getCacheForTarget(String target) {
+
+        private SortedSet<PositionalRobotCache> getCompleteCacheForTarget(String target) {
             return targets.getOrDefault(target, Collections.emptySortedSet());
         }
 

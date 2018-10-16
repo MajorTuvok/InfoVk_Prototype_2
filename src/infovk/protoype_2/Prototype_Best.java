@@ -159,7 +159,7 @@ public class Prototype_Best extends RobotBase {
         double y = cache.getTargetInfo().getY();
         double actualAngle = a;
 
-        Point movement = Point.fromPolarCoordinates(direction, velocity);
+        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
         Point distance = new Point(x - getX(), y - getY());
 
         Point pointEnemy = new Point(x, y);
