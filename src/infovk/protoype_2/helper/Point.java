@@ -336,6 +336,14 @@ public final class Point {
         return Double.compare(x, vec.x) == 0 && Double.compare(y, vec.y) == 0;
     }
 
+    @Override
+    public int hashCode() {
+        double hash = 7;
+        hash = x + hash * 31;
+        hash = y + hash * 31;
+        return (int) hash;
+    }
+
     /**
      * Returns a string representation of this vector.
      *

@@ -1,11 +1,23 @@
 package infovk.protoype_2;
 
+import infovk.protoype_2.helper.RobotCache;
+import infovk.protoype_2.helper.RobotCache.PositionalRobotCache;
+import robocode.Robot;
+import robocode.ScannedRobotEvent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 public class RobotBase extends SimpleRobot {
     private double energyPowerFactor;
     private double disFactor;
+    private RobotHistory mHistory;
     public RobotBase() {
         setEnergyPowerFactor(50);
         setDisFactor(25);
+        mHistory = new RobotHistory();
     }
 
     protected double getEnergyPowerFactor() {
@@ -22,6 +34,12 @@ public class RobotBase extends SimpleRobot {
 
     protected void setDisFactor(double disFactor) {
         this.disFactor = disFactor;
+    }
+
+    @Override
+    public void onScannedRobot(ScannedRobotEvent ex) {
+        super.onScannedRobot(ex);
+        mHistory.updateCache(ex, this);
     }
 
     @Override
@@ -48,6 +66,10 @@ public class RobotBase extends SimpleRobot {
         setAdjustRadarForRobotTurn(true);
     }
 
+    protected PositionalRobotCache getRecentCache(String target) {
+        return mHistory.getRecentCacheForTarget(target);
+    }
+
     protected void start() {
 
     }
@@ -62,5 +84,23 @@ public class RobotBase extends SimpleRobot {
 
     protected void fireRelativeToEnergyAndDistance(double baseVal, double distance) {
         fireRelativeToEnergy(baseVal - (int) distance / disFactor);
+    }
+
+    private static final class RobotHistory {
+        private Map<String, SortedSet<PositionalRobotCache>> targets;
+
+        public RobotHistory() {
+            targets = new HashMap<>();
+        }
+
+        private PositionalRobotCache getRecentCacheForTarget(String target) {
+            return targets.get(target).first();
+        }
+
+        private void updateCache(ScannedRobotEvent event, Robot scanner) {
+            SortedSet<PositionalRobotCache> set = targets.getOrDefault(event.getName(), new TreeSet<>(RobotCache.TIME_COMPARATOR));
+            set.add(RobotCache.fromEventAndScanner(event, scanner));
+            targets.put(event.getName(), set);
+        }
     }
 }

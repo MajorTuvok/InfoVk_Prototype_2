@@ -52,4 +52,37 @@ public final class RobotInfo {
     public double getVelocity() {
         return mVelocity;
     }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        temp = Double.doubleToLongBits(getHeading());
+        result = (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (getPos() != null ? getPos().hashCode() : 0);
+        temp = Double.doubleToLongBits(getVelocity());
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RobotInfo)) return false;
+
+        RobotInfo robotInfo = (RobotInfo) o;
+
+        if (Double.compare(robotInfo.getHeading(), getHeading()) != 0) return false;
+        if (Double.compare(robotInfo.getVelocity(), getVelocity()) != 0) return false;
+        return getPos() != null ? getPos().equals(robotInfo.getPos()) : robotInfo.getPos() == null;
+    }
+
+    @Override
+    public String toString() {
+        return "RobotInfo{" +
+                "mHeading=" + mHeading +
+                ", mPos=" + mPos +
+                ", mVelocity=" + mVelocity +
+                '}';
+    }
 }

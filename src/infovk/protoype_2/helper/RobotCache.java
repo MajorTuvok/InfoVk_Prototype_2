@@ -3,7 +3,10 @@ package infovk.protoype_2.helper;
 import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
+import java.util.Comparator;
+
 public class RobotCache implements Comparable<RobotCache> {
+    public static Comparator<RobotCache> TIME_COMPARATOR = Comparator.comparingLong(RobotCache::getTime);
     private final ScannedRobotEvent mEvent;
 
     private RobotCache(ScannedRobotEvent event) {
@@ -14,8 +17,12 @@ public class RobotCache implements Comparable<RobotCache> {
         return new RobotCache(event);
     }
 
-    public static RobotCache fromEventAndPosition(ScannedRobotEvent event) {
-        return new RobotCache(event);
+    public static RobotCache.PositionalRobotCache fromEventAndScanner(ScannedRobotEvent event, Robot scanner) {
+        return new RobotCache.PositionalRobotCache(event, scanner);
+    }
+
+    public static RobotCache.SelfCache fromSelf(Robot scanner) {
+        return new RobotCache.SelfCache(scanner);
     }
 
     public double getBearing() {
@@ -87,6 +94,15 @@ public class RobotCache implements Comparable<RobotCache> {
         RobotCache that = (RobotCache) o;
 
         return mEvent != null ? mEvent.getName().equals(that.mEvent.getName()) : that.mEvent == null;
+    }
+
+    public static final class SelfCache extends RobotCache {
+        private final RobotInfo mRobotInfo;
+
+        public SelfCache(Robot robot) {
+            super(RobotHelper.scannedEventFromRobot(robot));
+            mRobotInfo = RobotInfo.getInstance(robot);
+        }
     }
 
     public static final class PositionalRobotCache extends RobotCache {
