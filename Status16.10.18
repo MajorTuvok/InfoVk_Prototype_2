@@ -1,6 +1,4 @@
 # InfoVk_Prototype_2
-Update, Radar nun voll auf Gegner, verliert nicht und hat sehr kleinen Radius.
-gunCorrection darauf angepasst,dennoch etwas zu geringe Trefferrate.
-movement wird gegen 21:00 Uhr implementiert.
+Movement implementiert, Methoden kommentiert
 
 MfG Erik
