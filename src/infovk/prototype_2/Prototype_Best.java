@@ -1,9 +1,9 @@
-package infovk.protoype_2;
+package infovk.prototype_2;
 
 
-import infovk.protoype_2.helper.Point;
-import infovk.protoype_2.helper.RobotCache;
-import infovk.protoype_2.helper.RobotHelper;
+import infovk.prototype_2.helper.Point;
+import infovk.prototype_2.helper.RobotCache;
+import infovk.prototype_2.helper.RobotHelper;
 import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;

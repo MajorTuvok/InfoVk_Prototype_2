@@ -1,7 +1,7 @@
-package infovk.protoype_2;
+package infovk.prototype_2;
 
-import infovk.protoype_2.helper.RobotCache;
-import infovk.protoype_2.helper.RobotCache.PositionalRobotCache;
+import infovk.prototype_2.helper.RobotCache;
+import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
 import robocode.Bullet;
 import robocode.Robot;
 import robocode.ScannedRobotEvent;

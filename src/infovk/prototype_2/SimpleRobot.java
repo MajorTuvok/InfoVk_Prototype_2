@@ -1,6 +1,6 @@
-package infovk.protoype_2;
+package infovk.prototype_2;
 
-import infovk.protoype_2.helper.Point;
+import infovk.prototype_2.helper.Point;
 import robocode.AdvancedRobot;
 
 import java.awt.*;
@@ -1033,7 +1033,7 @@ abstract class SimpleRobotBehavior<T extends SimpleRobot> {
      * @see #getX()
      * @see #getY()
      */
-    final infovk.protoype_2.helper.Point getPoint() {
+    final infovk.prototype_2.helper.Point getPoint() {
         return new Point(this.getX(), this.getY());
     }
 

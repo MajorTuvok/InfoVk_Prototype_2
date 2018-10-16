@@ -1,4 +1,4 @@
-package infovk.protoype_2.helper;
+package infovk.prototype_2.helper;
 
 import robocode.Robot;
 
