@@ -114,7 +114,7 @@ public class RobotCache implements Comparable<RobotCache> {
             scannerInfo = RobotInfo.getInstance(scanner);
             double absoluteBearing = RobotHelper.absoluteBearing(scanner, event.getBearing());
             Point relCood = Point.fromPolarCoordinates(absoluteBearing, event.getDistance());
-            targetInfo = RobotInfo.getInstance(scannerInfo.getPos().add(relCood), event.getHeading(), event.getVelocity());
+            targetInfo = RobotInfo.getInstance(scannerInfo.getPos().add(relCood), event.getName(), event.getHeading(), event.getVelocity());
         }
 
         public RobotInfo getScannerInfo() {

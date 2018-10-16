@@ -6,31 +6,33 @@ public final class RobotInfo {
     private final double mHeading;
     private final Point mPos;
     private final double mVelocity;
+    private final String mName;
 
-    private RobotInfo(double x, double y, double heading, double velocity) {
-        this(new Point(x, y), heading, velocity);
+    private RobotInfo(String name, double x, double y, double heading, double velocity) {
+        this(new Point(x, y), name, heading, velocity);
     }
 
-    private RobotInfo(Point pos, double heading, double velocity) {
+    private RobotInfo(Point pos, String name, double heading, double velocity) {
         mPos = pos;
         mHeading = heading;
         mVelocity = velocity;
+        mName = name;
     }
 
     public static RobotInfo getInstance(Robot robot) {
-        return new RobotInfo(robot.getX(), robot.getY(), robot.getHeading(), robot.getVelocity());
+        return new RobotInfo(robot.getName(), robot.getX(), robot.getY(), robot.getHeading(), robot.getVelocity());
     }
 
-    public static RobotInfo getInstance(Point pos, double heading, double velocity) {
-        return new RobotInfo(pos, heading, velocity);
+    public static RobotInfo getInstance(Point pos, String name, double heading, double velocity) {
+        return new RobotInfo(pos, name, heading, velocity);
     }
 
-    public static RobotInfo getInstance(double x, double y, double heading, double velocity) {
-        return new RobotInfo(x, y, heading, velocity);
+    public static RobotInfo getInstance(String name, double x, double y, double heading, double velocity) {
+        return new RobotInfo(name, x, y, heading, velocity);
     }
 
     public static RobotInfo copyOf(RobotInfo other) {
-        return new RobotInfo(other.getX(), other.getY(), other.getHeading(), other.getVelocity());
+        return new RobotInfo(other.getPos(), other.getName(), other.getHeading(), other.getVelocity());
     }
 
     public double getX() {
@@ -53,6 +55,10 @@ public final class RobotInfo {
         return mVelocity;
     }
 
+    public String getName() {
+        return mName;
+    }
+
     @Override
     public int hashCode() {
         int result;
@@ -62,6 +68,7 @@ public final class RobotInfo {
         result = 31 * result + (getPos() != null ? getPos().hashCode() : 0);
         temp = Double.doubleToLongBits(getVelocity());
         result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         return result;
     }
 
@@ -74,15 +81,17 @@ public final class RobotInfo {
 
         if (Double.compare(robotInfo.getHeading(), getHeading()) != 0) return false;
         if (Double.compare(robotInfo.getVelocity(), getVelocity()) != 0) return false;
-        return getPos() != null ? getPos().equals(robotInfo.getPos()) : robotInfo.getPos() == null;
+        if (getPos() != null ? !getPos().equals(robotInfo.getPos()) : robotInfo.getPos() != null) return false;
+        return getName() != null ? getName().equals(robotInfo.getName()) : robotInfo.getName() == null;
     }
 
     @Override
     public String toString() {
         return "RobotInfo{" +
-                "mHeading=" + mHeading +
-                ", mPos=" + mPos +
-                ", mVelocity=" + mVelocity +
+                "heading=" + mHeading +
+                ", pos=" + mPos +
+                ", velocity=" + mVelocity +
+                ", name='" + mName + '\'' +
                 '}';
     }
 }
