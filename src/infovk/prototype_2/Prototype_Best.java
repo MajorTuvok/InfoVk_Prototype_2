@@ -15,7 +15,7 @@ public class Prototype_Best extends RobotBase {
 
 	private int i; //int für farbschleife
 
-
+    //Initializing StartSetup
     @Override
     protected void start() {
         super.start();
@@ -26,30 +26,78 @@ public class Prototype_Best extends RobotBase {
         setAdjustGunForRobotTurn(true);
     }
 
+    //SettingLoop
     @Override
     protected void loop() {
         super.loop();
         setTurnRadarRightRadians(720);
-        //double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
-        //double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
-        //setTurnRight(turn);
-        //ahead(move);
+        double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
+        double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
+        setTurnRight(turn);
+        ahead(move);
         rainbow();
-
     }
 
+    //Searching Enemy, holding Radar on it, firing Cannon, trying to dodge Enemy`s Bullets
     @Override
-    public void onHitByBullet(HitByBulletEvent event) { //not random enough
+    public void onScannedRobot(ScannedRobotEvent event) {
+        super.onScannedRobot(event);
+
+        Point coordinates = getRecentCache(event.getName()).getScannerInfo().getPos();
+        Point enemyCoordinates = getRecentCache(event.getName()).getTargetInfo().getPos();
+        Point distance = new Point(enemyCoordinates.getX() - coordinates.getX(), enemyCoordinates.getY() - coordinates.getY());
+
+        double absoluteBearing = getHeading() + event.getBearing();
+        double turnRadar = absoluteBearing - getRadarHeading();
+        double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
+
+        setTurnRadarRight(toTurnRadar);
+        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing);
+        fireRelativeToEnergyAndDistance(1, event.getDistance());
+        double oldEnergy = getCache(event.getName(), 1).getEnergy();
+        double newEnergy = event.getEnergy();
+
+        if (oldEnergy > newEnergy) {
+            double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
+            double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
+            setTurnRight(turn);
+            ahead(move);
+        }
+        rainbow();
+        scan();
+    }
+
+    //Redirecting and correcting Gun toward Enemy
+    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing) {
+        RobotCache.PositionalRobotCache cache = getRecentCache(enemy);
+        double velocity = cache.getVelocity();
+        double direction = cache.getHeading();
+
+        double turnGun = bearing - getGunHeading();
+        double toTurnGun = Utils.normalRelativeAngle(turnGun);
+
+        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
+        Point target = enemyCoordinates.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
+        Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
+        double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
+
+        setTurnGunRight(toTurnGun + correctionGun);
+        // System.out.println(toTurnGun);
+        //System.out.println(correctionGun);
+    }
+
+    //Change Position after hit by Enemy
+    @Override
+    public void onHitByBullet(HitByBulletEvent event) {
         super.onHitByBullet(event);
-        double bearing = getHeading();
-        double dodge = Utils.normalRelativeAngle((bearing - getHeading()));
-        // turnRight(dodge);
-        System.out.println(dodge);
-        // distance = (distance + 10) * -1;
-        //ahead(distance);
-
-
-
+        double absoluteBearing = getHeading() + event.getBearing();
+        setTurnRight(absoluteBearing);
+        double move = RobotHelper.RANDOM.nextDouble() * 199 + 1;
+        double random = RobotHelper.RANDOM.nextInt();
+        if (random > 0.5) {
+            move = move * -1;
+        }
+        ahead(move);
     }
 
 
@@ -99,121 +147,42 @@ public class Prototype_Best extends RobotBase {
 */
 
 
-
+    //Redirecting after Collision with Enemy
     @Override
     public void onHitRobot(HitRobotEvent event) {
         super.onHitRobot(event);
 
         setTurnRight(90);
-        ahead(100);
-
-
+        ahead(400);
     }
 
+    //Redirecting after hitting Wall, could be ignored if Method to WallDodge ready
     @Override
     public void onHitWall(HitWallEvent event) {
         super.onHitWall(event);
         double turnHitWall = 90;
-        ahead(100 * -1);
+        ahead(200 * -1);
         setTurnRight(turnHitWall);
-
-        //System.out.println(turnHitWall);
-
     }
 
-/*
-    @Override
-    public void onScannedRobot(ScannedRobotEvent event) { //finished
-        super.onScannedRobot(event);
-        //altes Programm vor erweiterung
-        double bearing = event.getBearing();
-        double absoluteBearing = getHeading() + bearing;
-        double radarDirection = getRadarHeading();
-        double toTurn = Utils.normalRelativeAngle(absoluteBearing - radarDirection);
-        toTurn = toTurn > 0 ? toTurn + 5 * (RobotHelper.RANDOM.nextDouble() + 1) : toTurn - 5 * (RobotHelper.RANDOM.nextDouble() + 1);
-        setTurnRadarRight(toTurn);
-
-        double gunDirection = getGunHeading();
-        double gunTurn = Utils.normalRelativeAngle(absoluteBearing - gunDirection);
-        //setTurnGunRight(gunTurn);
-        targetGun(gunTurn, event.getName());
-        fireRelativeToEnergyAndDistance(3, event.getDistance());
-
-       /* double oldEnergy = getCache(event.getName(), 1).getEnergy();
-        double newEnergy = event.getEnergy();
-
-        if (oldEnergy > newEnergy) {
-            double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
-            double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
-            setTurnRight(turn);
-            ahead(move);
-        }*/
-    // rainbow();
-
-        //dodgeWall();
-
-    // }
-
-
-    @Override
-    public void onScannedRobot(ScannedRobotEvent event) {
-        super.onScannedRobot(event);
-
-        Point coordinates = getRecentCache(event.getName()).getScannerInfo().getPos();
-        Point enemyCoordinates = getRecentCache(event.getName()).getTargetInfo().getPos();
-        Point distance = new Point(enemyCoordinates.getX() - coordinates.getX(), enemyCoordinates.getY() - coordinates.getY());
-
-        double absoluteBearing = getHeading() + event.getBearing();
-        double turnRadar = absoluteBearing - getRadarHeading();
-        double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
-
-        setTurnRadarRight(toTurnRadar);
-        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing);
-        fireRelativeToEnergyAndDistance(1, event.getDistance());
-        scan();
-    }
-
-    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing) { //close to finish
-        RobotCache.PositionalRobotCache cache = getRecentCache(enemy);
-        double velocity = cache.getVelocity();
-        double direction = cache.getHeading();
-
-        double turnGun = bearing - getGunHeading();
-        double toTurnGun = Utils.normalRelativeAngle(turnGun);
-
-
-
-
-        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
-        Point target = enemyCoordinates.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
-        Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
-        double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
-
-        setTurnGunRight(toTurnGun + correctionGun);
-        System.out.println(toTurnGun);
-        System.out.println(correctionGun);
-
-    }
-
-
+    //Setting Color from own Bot
     private void rainbow() {
 
-        this.setColors(Color.BLACK, new Color(colorfunction((int) (this.getGunHeat() * 75)), colorfunction(120 - (int) (this.getGunHeat() * 75)), 0), Color.BLACK, Color.WHITE, Color.BLUE);
+        this.setColors(Color.BLACK, new Color(colorFunction((int) (this.getGunHeat() * 75)), colorFunction(120 - (int) (this.getGunHeat() * 75)), 0), Color.BLACK, Color.WHITE, Color.BLUE);
         if (i > 358)
             i = 0;
         else
             i = i + (int) (10 * Math.random()) + 1;
-
     }
 
-    private int colorfunction(int x) {
+    //Working through ColorSpectrum
+    private int colorFunction(int x) {
         double a = (double) x;
         double b = 0;
 
         while (a >= 360) {
             a = a - 360;
         }
-
         if (a >= 0 && a < 60)
             b = 4.25 * a;
         else if (a >= 60 && a < 180)
@@ -231,6 +200,5 @@ public class Prototype_Best extends RobotBase {
         else
             b = 255;
         return (int) b;
-
     }
 }
