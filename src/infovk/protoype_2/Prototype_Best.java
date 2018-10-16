@@ -24,7 +24,9 @@ public class Prototype_Best extends RobotBase {
     @Override
     protected void loop() {
         super.loop();
-        setTurnRadarRight(360);
+        setTurnRadarRight(360); //passiert wenn gegner raus dann erst wieder ne volle drehung
+                                // lösung über boolean array?
+                                //schusskorrektur?
     }
 
     @Override
@@ -39,6 +41,22 @@ public class Prototype_Best extends RobotBase {
 
 
     }
+    public void dodgeWall(){
+     double x = getX();   //Eigene Koordinaten
+     double y = getY();
+
+     /*Wand koords linke x0,y-achse
+       Wand koords unten x-achse, y0
+       Wand koords oben xachse, ymax
+       wand koords rechts xmax, yachse
+      */
+     if (0<x&& x<=40){ //Linke wand
+         double angle = 0;
+         setTurnRight(0);
+     }
+
+    }
+
 
     @Override
     public void onHitRobot(HitRobotEvent event) {
