@@ -18,6 +18,7 @@ public class Prototype_Best extends RobotBase {
     protected void start() {
         super.start();
         i = 0;
+        
         rainbow();
     }
 
