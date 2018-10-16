@@ -1,17 +1,17 @@
 package infovk.protoype_2;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import infovk.protoype_2.helper.RobotCache;
 import infovk.protoype_2.helper.RobotCache.PositionalRobotCache;
+import robocode.Bullet;
 import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class RobotBase extends SimpleRobot {
+    private static int HISTORY_SIZE = 5;
     private double energyPowerFactor;
     private double disFactor;
     private RobotHistory mHistory;
@@ -84,6 +84,16 @@ public class RobotBase extends SimpleRobot {
 
     }
 
+    @Override
+    public void setFire(double power) {
+        super.setFire(power);
+    }
+
+    @Override
+    public Bullet setFireBullet(double power) {
+        return super.setFireBullet(power);
+    }
+
     protected void fireRelativeToEnergy(double baseVal) {
         fire(Math.max(Math.min(baseVal * getEnergy() / 50, 3), 0.1));
     }
@@ -106,13 +116,18 @@ public class RobotBase extends SimpleRobot {
         private void updateCache(ScannedRobotEvent event, Robot scanner) {
             SortedSet<PositionalRobotCache> set = targets.getOrDefault(event.getName(), new TreeSet<>(RobotCache.TIME_COMPARATOR));
             set.add(RobotCache.fromEventAndScanner(event, scanner));
+            while (set.size() > HISTORY_SIZE)
+                set.remove(set.last());
             targets.put(event.getName(), set);
         }
 
         @Nullable
         private PositionalRobotCache getCache(String target, int index) {
-            SortedSet<PositionalRobotCache> set = targets.get(target);
-            if (set == null) return null;
+            if (index == 0) {
+                return getRecentCacheForTarget(target);
+            }
+            SortedSet<PositionalRobotCache> set = getCacheForTarget(target);
+            if (set == null || set.isEmpty()) return null;
             int count = 0;
             for (PositionalRobotCache cache : set) {
                 if (count == index)
@@ -120,6 +135,11 @@ public class RobotBase extends SimpleRobot {
                 count++;
             }
             return null;
+        }
+
+        @NotNull
+        private SortedSet<PositionalRobotCache> getCacheForTarget(String target) {
+            return targets.getOrDefault(target, Collections.emptySortedSet());
         }
 
     }
