@@ -10,20 +10,21 @@ import robocode.ScannedRobotEvent;
 import java.awt.*;
 
 public class Prototype_Best extends RobotBase {
-
+	
+	private int i; //int für farbschleife
     private double distance = 50; //Movement when hit
 
     @Override
     protected void start() {
         super.start();
-        setBodyColor(Color.BLACK);
-        setGunColor(Color.GREEN);
-        setRadarColor(Color.BLACK);
+        i = 0;
+        rainbow();
     }
 
     @Override
     protected void loop() {
         super.loop();
+        rainbow();
         setTurnRadarRight(360); //passiert wenn gegner raus dann erst wieder ne volle drehung
                                 // lösung über boolean array?
                                 //schusskorrektur?
@@ -92,6 +93,43 @@ public class Prototype_Best extends RobotBase {
         double gunTurn = Utils.normalRelativeAngle(absoluteBearing - gunDirection);
         setTurnGunRight(gunTurn);
         fireRelativeToEnergyAndDistance(3, event.getDistance());
-
+        rainbow();
+    }
+    
+    private void rainbow() {
+    	this.setColors(Color.BLACK,new Color(farbfunktion((int)(this.getGunHeat()*75)), farbfunktion(120 - (int)(this.getGunHeat()*75)), 0),Color.BLACK, new Color(farbfunktion(i), farbfunktion(i+120), farbfunktion(i+240)), new Color(farbfunktion(i), farbfunktion(i+120), farbfunktion(i+240)));
+    	if (i > 358)
+        	i = 0;
+        else
+        	i = i + (int)(10 * Math.random()) + 1;
+        
+    }
+    
+    private int farbfunktion(int x){
+    	double a = (double) x;
+    	double b = 0;
+    	
+    	while(a >=360){
+    		a = a-360;
+    	}
+    	
+    	if(a >= 0 && a < 60)
+    		b = 4.25 * a;
+    	else if (a >= 60 && a < 180)
+    		b = 255;
+    	else if (a >= 180 && a < 240)
+    		b = -4.25*(a - 180) + 255;
+    	else if (a >= 240 && a < 360)
+    		b = 0;
+    	else if (a >= 360 && a < 420)
+    		b = 4.25*(a-360);
+    	else if (a >= 420 && a < 540)
+    		b = 255;
+    	else if (a >= 540 && a < 600)
+    		b = -4.25*(a-540) + 255;
+    	else
+    		b = 255;
+		return (int) b;
+    	
     }
 }
