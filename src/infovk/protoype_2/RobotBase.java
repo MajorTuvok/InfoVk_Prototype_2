@@ -158,11 +158,22 @@ public class RobotBase extends SimpleRobot {
             return null;
         }
 
-
         private SortedSet<PositionalRobotCache> getCompleteCacheForTarget(String target) {
             return targets.getOrDefault(target, Collections.emptySortedSet());
         }
 
+    }
+
+    private static final class BulletHistory {
+        private HashMap<String, SortedSet<Bullet>> mBullets;
+
+        private BulletHistory() {
+            mBullets = new HashMap<>();
+        }
+
+        private void onFireBullet(Bullet bullet) {
+
+        }
     }
 
 }
