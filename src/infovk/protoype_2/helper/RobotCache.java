@@ -1,12 +1,21 @@
 package infovk.protoype_2.helper;
 
+import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
-public final class OpponentCache implements Comparable<OpponentCache> {
+public class RobotCache implements Comparable<RobotCache> {
     private final ScannedRobotEvent mEvent;
 
-    public OpponentCache(ScannedRobotEvent event) {
+    private RobotCache(ScannedRobotEvent event) {
         mEvent = event;
+    }
+
+    public static RobotCache fromEvent(ScannedRobotEvent event) {
+        return new RobotCache(event);
+    }
+
+    public static RobotCache fromEventAndPosition(ScannedRobotEvent event) {
+        return new RobotCache(event);
     }
 
     public double getBearing() {
@@ -61,7 +70,7 @@ public final class OpponentCache implements Comparable<OpponentCache> {
         mEvent.setPriority(newPriority);
     }
 
-    public int compareTo(OpponentCache cache) {
+    public int compareTo(RobotCache cache) {
         return mEvent.compareTo(cache.mEvent);
     }
 
@@ -73,10 +82,31 @@ public final class OpponentCache implements Comparable<OpponentCache> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof OpponentCache)) return false;
+        if (!(o instanceof RobotCache)) return false;
 
-        OpponentCache that = (OpponentCache) o;
+        RobotCache that = (RobotCache) o;
 
         return mEvent != null ? mEvent.getName().equals(that.mEvent.getName()) : that.mEvent == null;
+    }
+
+    public static final class PositionalRobotCache extends RobotCache {
+        private final RobotInfo scannerInfo;
+        private final RobotInfo targetInfo;
+
+        private PositionalRobotCache(ScannedRobotEvent event, Robot scanner) {
+            super(event);
+            scannerInfo = RobotInfo.getInstance(scanner);
+            double absoluteBearing = RobotHelper.absoluteBearing(scanner, event.getBearing());
+            Point relCood = Point.fromPolarCoordinates(absoluteBearing, event.getDistance());
+            targetInfo = RobotInfo.getInstance(scannerInfo.getPos().add(relCood), event.getHeading(), event.getVelocity());
+        }
+
+        public RobotInfo getScannerInfo() {
+            return scannerInfo;
+        }
+
+        public RobotInfo getTargetInfo() {
+            return targetInfo;
+        }
     }
 }

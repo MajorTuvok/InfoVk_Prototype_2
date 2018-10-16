@@ -19,11 +19,11 @@ turnRadar(720);
             double bearing = event.getBearing();
             double absoluteBearing = bearing + getHeading();
             double radarHeading = getRadarHeading();
-            double toTurn = Utils.normalRelativeAngle(absoluteBearing - radarHeading);
+            double toTurn = RobotHelper.normalRelativeAngle(absoluteBearing - radarHeading);
             toTurn = toTurn > 0 ? toTurn + 5 : toTurn - 5;
             turnRadar(toTurn);
             //turn(event.getBearing()); double gunDirection = getGunHeading();
-            double gunTurn = Utils.normalRelativeAngle(absoluteBearing - gunDirection);
+            double gunTurn = RobotHelper.normalRelativeAngle(absoluteBearing - gunDirection);
             turnGun(gunTurn);
             fireBullet(1.75);
 

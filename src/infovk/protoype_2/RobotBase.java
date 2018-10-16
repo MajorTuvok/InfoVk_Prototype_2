@@ -57,7 +57,7 @@ public class RobotBase extends SimpleRobot {
     }
 
     protected void fireRelativeToEnergy(double baseVal) {
-        fire(Math.max(Math.min(baseVal * getEnergy() / 50, 3), 1));
+        fire(Math.max(Math.min(baseVal * getEnergy() / 50, 3), 0.1));
     }
 
     protected void fireRelativeToEnergyAndDistance(double baseVal, double distance) {
