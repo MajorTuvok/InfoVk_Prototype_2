@@ -30,7 +30,7 @@ public class Prototype_Best extends RobotBase {
     @Override
     protected void loop() {
         super.loop();
-        setTurnRadarRightRadians(720);
+        setTurnRadarRight(360);
         double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
         double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
         setTurnRight(turn);
@@ -50,10 +50,10 @@ public class Prototype_Best extends RobotBase {
         double absoluteBearing = getHeading() + event.getBearing();
         double turnRadar = absoluteBearing - getRadarHeading();
         double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
+        double distanceToEnemy = event.getDistance();
 
         setTurnRadarRight(toTurnRadar);
-        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing);
-        fireRelativeToEnergyAndDistance(1, event.getDistance());
+        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
         double oldEnergy = getCache(event.getName(), 1).getEnergy();
         double newEnergy = event.getEnergy();
 
@@ -61,27 +61,28 @@ public class Prototype_Best extends RobotBase {
             double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
             double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
             setTurnRight(turn);
-            ahead(move);
+            setAhead(move);
         }
         rainbow();
         scan();
     }
 
-    //Redirecting and correcting Gun toward Enemy
-    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing) {
+    //Redirecting and correcting Gun toward Enemy, still uncorrect
+    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
         RobotCache.PositionalRobotCache cache = getRecentCache(enemy);
-        double velocity = cache.getVelocity();
         double direction = cache.getHeading();
 
         double turnGun = bearing - getGunHeading();
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
 
         Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
-        Point target = enemyCoordinates.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
+        Point target = enemyCoordinates.add(movement).add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
         Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
         double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
 
         setTurnGunRight(toTurnGun + correctionGun);
+
+        scan();
         // System.out.println(toTurnGun);
         //System.out.println(correctionGun);
     }
