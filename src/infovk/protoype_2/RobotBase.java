@@ -1,5 +1,6 @@
 package infovk.protoype_2;
 
+import com.sun.istack.internal.Nullable;
 import infovk.protoype_2.helper.RobotCache;
 import infovk.protoype_2.helper.RobotCache.PositionalRobotCache;
 import robocode.Robot;
@@ -70,6 +71,11 @@ public class RobotBase extends SimpleRobot {
         return mHistory.getRecentCacheForTarget(target);
     }
 
+    @Nullable
+    protected PositionalRobotCache getCache(String target, int index) {
+        return mHistory.getCache(target, index);
+    }
+
     protected void start() {
 
     }
@@ -102,5 +108,20 @@ public class RobotBase extends SimpleRobot {
             set.add(RobotCache.fromEventAndScanner(event, scanner));
             targets.put(event.getName(), set);
         }
+
+        @Nullable
+        private PositionalRobotCache getCache(String target, int index) {
+            SortedSet<PositionalRobotCache> set = targets.get(target);
+            if (set == null) return null;
+            int count = 0;
+            for (PositionalRobotCache cache : set) {
+                if (count == index)
+                    return cache;
+                count++;
+            }
+            return null;
+        }
+
     }
+
 }

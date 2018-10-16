@@ -8,6 +8,8 @@ import java.util.Random;
 
 public class RobotHelper {
     public static final Random RANDOM = Utils.getRandom();
+    public static final Point Y_AXIS = new Point(0, 1);
+    public static final Point X_AXIS = new Point(1, 0);
 
     public static final double absoluteBearing(Robot robot, double relBearing) {
         return robot.getHeading() + relBearing;
