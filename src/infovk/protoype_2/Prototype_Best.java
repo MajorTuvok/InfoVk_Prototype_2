@@ -20,22 +20,21 @@ public class Prototype_Best extends RobotBase {
     protected void start() {
         super.start();
         i = 0;
-
         rainbow();
+        setAdjustRadarForRobotTurn(true);
+        setAdjustRadarForGunTurn(true);
+        setAdjustGunForRobotTurn(true);
     }
 
     @Override
     protected void loop() {
         super.loop();
-        rainbow();
-        setTurnRadarRight(360); //passiert wenn gegner raus dann erst wieder ne volle drehung
-                                // lösung über boolean array?
-                                //schusskorrektur?
         setTurnRadarRight(360);
-        double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
-        double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
-        setTurnRight(turn);
-        ahead(move);
+        //double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
+        //double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
+        //setTurnRight(turn);
+        //ahead(move);
+        rainbow();
 
     }
 
@@ -44,10 +43,11 @@ public class Prototype_Best extends RobotBase {
         super.onHitByBullet(event);
         double bearing = getHeading();
         double dodge = Utils.normalRelativeAngle((bearing - getHeading()));
-        turnRight(dodge);
+        // turnRight(dodge);
         System.out.println(dodge);
-        distance = (distance + 10) * -1;
-        ahead(distance);
+        // distance = (distance + 10) * -1;
+        //ahead(distance);
+
 
 
     }
@@ -106,6 +106,7 @@ public class Prototype_Best extends RobotBase {
         ahead(distance * -1);
         setTurnRight(90);
 
+
     }
 
     @Override
@@ -114,11 +115,12 @@ public class Prototype_Best extends RobotBase {
         double turnHitWall = 90;
         ahead(distance * -1);
         setTurnRight(turnHitWall);
+
         //System.out.println(turnHitWall);
 
     }
 
-    //Nicht funktionsfähig, da grad und Bogenmaß vorkommt ->erstelle neue Klasse
+
     @Override
     public void onScannedRobot(ScannedRobotEvent event) { //finished
         super.onScannedRobot(event);
@@ -134,17 +136,17 @@ public class Prototype_Best extends RobotBase {
         double gunTurn = Utils.normalRelativeAngle(absoluteBearing - gunDirection);
         //setTurnGunRight(gunTurn);
         targetGun(gunTurn, event.getName());
-        fireRelativeToEnergyAndDistance(1, event.getDistance());
+        fireRelativeToEnergyAndDistance(3, event.getDistance());
 
-        double oldEnergy = getCache(event.getName(), 1).getEnergy();
+       /* double oldEnergy = getCache(event.getName(), 1).getEnergy();
         double newEnergy = event.getEnergy();
 
         if (oldEnergy > newEnergy) {
-            double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
-            double move = (RobotHelper.RANDOM.nextDouble() * 400) - 200;
+            double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
+            double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
             setTurnRight(turn);
             ahead(move);
-        }
+        }*/
         rainbow();
 
         //dodgeWall();
@@ -163,7 +165,7 @@ public class Prototype_Best extends RobotBase {
         Point distance = new Point(x - getX(), y - getY());
 
         Point pointEnemy = new Point(x, y);
-        Point target = pointEnemy.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
+        Point target = pointEnemy.add(movement).add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
         Point own = new Point(getX(), getY());
         Point toTarget = new Point(target.getX() - own.getX(), target.getY() - own.getY());
         double toTurnGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
@@ -174,8 +176,10 @@ public class Prototype_Best extends RobotBase {
 
     }
 
+
     private void rainbow() {
-        this.setColors(Color.BLACK, new Color(farbfunktion((int) (this.getGunHeat() * 75)), farbfunktion(120 - (int) (this.getGunHeat() * 75)), 0), Color.BLACK, new Color(farbfunktion(i), farbfunktion(i + 120), farbfunktion(i + 240)), new Color(farbfunktion(i), farbfunktion(i + 120), farbfunktion(i + 240)));
+
+        this.setColors(Color.BLACK, new Color(colorfunction((int) (this.getGunHeat() * 75)), colorfunction(120 - (int) (this.getGunHeat() * 75)), 0), Color.BLACK, Color.WHITE, Color.BLUE);
         if (i > 358)
             i = 0;
         else
@@ -183,7 +187,7 @@ public class Prototype_Best extends RobotBase {
 
     }
 
-    private int farbfunktion(int x) {
+    private int colorfunction(int x) {
         double a = (double) x;
         double b = 0;
 
