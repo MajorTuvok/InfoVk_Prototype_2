@@ -14,7 +14,7 @@ import java.awt.*;
 public class Prototype_Best extends RobotBase {
 
 	private int i; //int für farbschleife
-    private double distance = 50; //Movement when hit
+
 
     @Override
     protected void start() {
@@ -29,7 +29,7 @@ public class Prototype_Best extends RobotBase {
     @Override
     protected void loop() {
         super.loop();
-        setTurnRadarRight(360);
+        setTurnRadarRightRadians(720);
         //double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
         //double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
         //setTurnRight(turn);
@@ -103,8 +103,9 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onHitRobot(HitRobotEvent event) {
         super.onHitRobot(event);
-        ahead(distance * -1);
+
         setTurnRight(90);
+        ahead(100);
 
 
     }
@@ -113,14 +114,14 @@ public class Prototype_Best extends RobotBase {
     public void onHitWall(HitWallEvent event) {
         super.onHitWall(event);
         double turnHitWall = 90;
-        ahead(distance * -1);
+        ahead(100 * -1);
         setTurnRight(turnHitWall);
 
         //System.out.println(turnHitWall);
 
     }
 
-
+/*
     @Override
     public void onScannedRobot(ScannedRobotEvent event) { //finished
         super.onScannedRobot(event);
@@ -147,32 +148,50 @@ public class Prototype_Best extends RobotBase {
             setTurnRight(turn);
             ahead(move);
         }*/
-        rainbow();
+    // rainbow();
 
         //dodgeWall();
 
+    // }
+
+
+    @Override
+    public void onScannedRobot(ScannedRobotEvent event) {
+        super.onScannedRobot(event);
+
+        Point coordinates = getRecentCache(event.getName()).getScannerInfo().getPos();
+        Point enemyCoordinates = getRecentCache(event.getName()).getTargetInfo().getPos();
+        Point distance = new Point(enemyCoordinates.getX() - coordinates.getX(), enemyCoordinates.getY() - coordinates.getY());
+
+        double absoluteBearing = getHeading() + event.getBearing();
+        double turnRadar = absoluteBearing - getRadarHeading();
+        double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
+
+        setTurnRadarRight(toTurnRadar);
+        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing);
+        fireRelativeToEnergyAndDistance(1, event.getDistance());
+        scan();
     }
 
-    public void targetGun(double a, String enemy) { //close to finish
+    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing) { //close to finish
         RobotCache.PositionalRobotCache cache = getRecentCache(enemy);
         double velocity = cache.getVelocity();
         double direction = cache.getHeading();
-        double x = cache.getTargetInfo().getX();
-        double y = cache.getTargetInfo().getY();
-        double actualAngle = a;
+
+        double turnGun = bearing - getGunHeading();
+        double toTurnGun = Utils.normalRelativeAngle(turnGun);
+
+
+
 
         Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
-        Point distance = new Point(x - getX(), y - getY());
+        Point target = enemyCoordinates.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
+        Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
+        double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
 
-        Point pointEnemy = new Point(x, y);
-        Point target = pointEnemy.add(movement).add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
-        Point own = new Point(getX(), getY());
-        Point toTarget = new Point(target.getX() - own.getX(), target.getY() - own.getY());
-        double toTurnGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
-
-        setTurnGunRight(Utils.normalRelativeAngle(actualAngle + toTurnGun));
-        System.out.println(actualAngle + toTurnGun);
-
+        setTurnGunRight(toTurnGun + correctionGun);
+        System.out.println(toTurnGun);
+        System.out.println(correctionGun);
 
     }
 
