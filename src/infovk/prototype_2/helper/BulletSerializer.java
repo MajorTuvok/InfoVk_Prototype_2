@@ -12,10 +12,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BulletSerializer {
+    private static final String KEY_NAME = "name";
     private static final String KEY_HIT = "hit";
     private static final String KEY_MISSED = "missed";
     private static final String KEY_SHIELDED = "shielded";
-    private static final List<String> VALID_KEYS = Collections.unmodifiableList(Stream.of(KEY_HIT, KEY_MISSED, KEY_SHIELDED).collect(Collectors.toList()));
+    private static final String KEY_NEW_ENTRY = "******************************";
+    private static final String KEY_VAL = "=";
+    private static final List<String> VALID_KEYS = Collections.unmodifiableList(Stream.of(KEY_NAME, KEY_HIT, KEY_MISSED, KEY_SHIELDED).collect(Collectors.toList()));
 
     public static void serializeBullets(PrintStream stream, BulletManager manager) {
         BulletView view = manager.getView();
@@ -29,11 +32,26 @@ public class BulletSerializer {
     }
 
     public static void serializeBullets(PrintStream stream, BulletManager manager, String target) {
+        stream.println(KEY_NEW_ENTRY);
         BulletView view = manager.getView();
-        stream.println(target);
         int missed = view.getMissedBullets().getOrDefault(target, 0);
         int hit = view.getHitBullets().getOrDefault(target, 0);
         int shielded = view.getShieldedBullets().getOrDefault(target, 0);
-        stream.print(KEY_MISSED);
+        printVal(stream, KEY_NAME, target);
+        printVal(stream, KEY_MISSED, missed);
+        printVal(stream, KEY_HIT, hit);
+        printVal(stream, KEY_SHIELDED, shielded);
+    }
+
+    private static void printVal(PrintStream stream, String key, int value) {
+        stream.print(key);
+        stream.print(KEY_VAL);
+        stream.println(value);
+    }
+
+    private static void printVal(PrintStream stream, String key, String value) {
+        stream.print(key);
+        stream.print(KEY_VAL);
+        stream.println(value);
     }
 }

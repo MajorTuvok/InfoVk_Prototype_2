@@ -87,6 +87,14 @@ public class RobotCache implements Comparable<RobotCache> {
     }
 
     @Override
+    public String toString() {
+        return "RobotCache{" +
+                "name=" + getName() +
+                ", time=" + getTime() +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof RobotCache)) return false;
@@ -102,6 +110,19 @@ public class RobotCache implements Comparable<RobotCache> {
         public SelfCache(Robot robot) {
             super(RobotHelper.scannedEventFromRobot(robot));
             mRobotInfo = RobotInfo.getInstance(robot);
+        }
+
+        public RobotInfo getRobotInfo() {
+            return mRobotInfo;
+        }
+
+        @Override
+        public String toString() {
+            return "SelfCache{" +
+                    "name=" + getName() +
+                    ", time=" + getTime() +
+                    ", scanner=" + mRobotInfo +
+                    '}';
         }
     }
 
@@ -123,6 +144,16 @@ public class RobotCache implements Comparable<RobotCache> {
 
         public RobotInfo getTargetInfo() {
             return targetInfo;
+        }
+
+        @Override
+        public String toString() {
+            return "PositionalRobotCache{" +
+                    "name=" + getName() +
+                    ", time=" + getTime() +
+                    ", scannerInfo=" + scannerInfo +
+                    ", targetInfo=" + targetInfo +
+                    '}';
         }
     }
 }

@@ -1,18 +1,15 @@
 package infovk.prototype_2;
 
-import infovk.prototype_2.helper.BulletCache;
+import infovk.prototype_2.helper.*;
 import infovk.prototype_2.helper.BulletCache.PositionalBulletCache;
 import infovk.prototype_2.helper.BulletCache.TargetedBulletCache;
-import infovk.prototype_2.helper.Constants;
-import infovk.prototype_2.helper.RobotCache;
 import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
-import infovk.prototype_2.helper.RobotInfo;
 import robocode.Bullet;
 import robocode.BulletHitBulletEvent;
 import robocode.BulletHitEvent;
 import robocode.BulletMissedEvent;
-import robocode.Robot;
 import robocode.*;
+import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
@@ -175,6 +172,18 @@ public class RobotBase extends SimpleRobot implements Constants {
 
     private Bullet performSetFireBullet(double power) {
         return super.setFireBullet(power);
+    }
+
+    @Override
+    public void onRobotDeath(RobotDeathEvent event) {
+        super.onRobotDeath(event);
+        BulletSerializer.serializeBullets(System.out, mBulletManager, event.getName());
+    }
+
+    @Override
+    public void onDeath(DeathEvent event) {
+        super.onDeath(event);
+        BulletSerializer.serializeBullets(System.out, mBulletManager);
     }
 
     public final class BulletManager {
