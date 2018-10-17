@@ -11,9 +11,11 @@ import robocode.Bullet;
 import robocode.BulletHitBulletEvent;
 import robocode.BulletHitEvent;
 import robocode.BulletMissedEvent;
+import robocode.Robot;
 import robocode.*;
 import robocode.ScannedRobotEvent;
 
+import java.awt.*;
 import java.util.*;
 
 public class RobotBase extends SimpleRobot implements Constants {
@@ -22,12 +24,14 @@ public class RobotBase extends SimpleRobot implements Constants {
     private double disFactor;
     private BulletManager mBulletManager;
     private RobotHistory mRobotHistory;
+    private ColorHandler mColorHandler;
 
     public RobotBase() {
         setEnergyPowerFactor(40);
-        setDisFactor(50);
+        setDisFactor(100);
         mRobotHistory = new RobotHistory();
         mBulletManager = new BulletManager();
+        mColorHandler = new ColorHandler();
     }
 
     protected double getEnergyPowerFactor() {
@@ -44,6 +48,10 @@ public class RobotBase extends SimpleRobot implements Constants {
 
     protected void setDisFactor(double disFactor) {
         this.disFactor = disFactor;
+    }
+
+    public ColorHandler getColorHandler() {
+        return mColorHandler;
     }
 
     /**
@@ -72,10 +80,12 @@ public class RobotBase extends SimpleRobot implements Constants {
     @Override
     public void run() {
 
+        setAdjustToTurns();
         if (behavior != null) {
             behavior.start();
         }
         start();
+        getColorHandler().rainbow();
         execute();
 
         while (true) {
@@ -84,6 +94,7 @@ public class RobotBase extends SimpleRobot implements Constants {
                 behavior.execute();
             }
             loop();
+            getColorHandler().rainbow();
             execute();
         }
     }
@@ -93,6 +104,7 @@ public class RobotBase extends SimpleRobot implements Constants {
         setAdjustRadarForGunTurn(true);
         setAdjustRadarForRobotTurn(true);
     }
+
 
     @Override
     public void onBulletHit(BulletHitEvent ex) {
@@ -124,6 +136,7 @@ public class RobotBase extends SimpleRobot implements Constants {
     public void onScannedRobot(ScannedRobotEvent ex) {
         super.onScannedRobot(ex);
         mRobotHistory.updateCache(ex, this);
+        getColorHandler().rainbow();
     }
 
     protected PositionalRobotCache getRecentCache(String target) {
@@ -352,6 +365,58 @@ public class RobotBase extends SimpleRobot implements Constants {
 
         public long getTime() {
             return mTime;
+        }
+    }
+
+    private final class ColorHandler {
+        private int i; //int für farbschleife
+
+        public ColorHandler() {
+            this.i = 0;
+        }
+
+        //Setting Color from own Bot
+        private void rainbow() {
+
+            RobotBase.this.setColors(
+                    Color.BLACK,
+                    new Color(colorFunction((int) (RobotBase.this.getGunHeat() * 75)), colorFunction(120 - (int) (RobotBase.this.getGunHeat() * 75)), 0),
+                    Color.BLACK,
+                    Color.WHITE,
+                    Color.BLUE);
+            if (i > 358) {
+                i = 0;
+            } else {
+                i = i + (int) (10 * Math.random()) + 1;
+            }
+        }
+
+        //Working through ColorSpectrum
+        private int colorFunction(int x) {
+            double a = (double) x;
+            double b = 0;
+
+            while (a >= 360) {
+                a = a - 360;
+            }
+            if (a >= 0 && a < 60) {
+                b = 4.25 * a;
+            } else if (a >= 60 && a < 180) {
+                b = 255;
+            } else if (a >= 180 && a < 240) {
+                b = -4.25 * (a - 180) + 255;
+            } else if (a >= 240 && a < 360) {
+                b = 0;
+            } else if (a >= 360 && a < 420) {
+                b = 4.25 * (a - 360);
+            } else if (a >= 420 && a < 540) {
+                b = 255;
+            } else if (a >= 540 && a < 600) {
+                b = -4.25 * (a - 540) + 255;
+            } else {
+                b = 255;
+            }
+            return (int) b;
         }
     }
 
