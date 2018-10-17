@@ -12,13 +12,22 @@ import robocode.ScannedRobotEvent;
 import java.util.Map;
 
 public class Prototype_Best extends RobotBase {
+    private static final int MIN_ROBOT_DISTANCE = 80;
+    private static final double MIN_WALL_PERCENTAGE = 0.3;
+    private double leftBorder = 0;
+    private double lowerBorder = 0;
+    private double rightBorder = Double.MAX_VALUE;
+    private double upperBorder = Double.MAX_VALUE;
 
     /**
-     * Initializing StartSetup
+     * Redirecting after Collision with Enemy
      */
     @Override
-    protected void start() {
-        super.start();
+    public void onHitRobot(HitRobotEvent event) {
+        super.onHitRobot(event);
+
+        setTurnRight(randomFixedRange(-135, 135, -46, 46));
+        setAhead(randomFixedRange(-500, 500, -300, 300));
     }
 
     /**
@@ -142,36 +151,59 @@ public class Prototype_Best extends RobotBase {
     }
 
     /**
+     * Redirecting after hitting Wall, not in use during dodgeWall active
+     */
+    @Override
+    public void onHitWall(HitWallEvent event) {
+        super.onHitWall(event);
+        setTurnRight(randomFixedRange(-180, 180, -91, 91));
+        setAhead(randomFixedRange(-500, 500, -300, 300));
+
+    }
+
+    /**
+     * Initializing StartSetup
+     */
+    @Override
+    protected void start() {
+        super.start();
+        lowerBorder = getBattleFieldHeight() * MIN_WALL_PERCENTAGE;
+        upperBorder = getBattleFieldHeight() * (1 - MIN_WALL_PERCENTAGE);
+        leftBorder = getBattleFieldWidth() * MIN_WALL_PERCENTAGE;
+        rightBorder = getBattleFieldWidth() * (1 - MIN_WALL_PERCENTAGE);
+    }
+
+    /**
+     * Testing if Movement possible
+     */
+    @Override
+    public void setAhead(double distance) {
+        dodgeWall(distance);
+        //System.out.println("distance=" + distance);
+    }
+
+    /**
      * Dodging Walls
      */
     private void dodgeWall(double distance) {
         double x = getX();
         double y = getY();
 
-        double wallTop = getBattleFieldHeight() * 0.7;
-        double wallRight = getBattleFieldWidth() * 0.7;
-        double wallBottom = getBattleFieldHeight() * 0.3;
-        double wallLeft = getBattleFieldWidth() * 0.3;
-
-        if (y >= wallTop) {
-            setTurnRight(getHeading() * -1);
+        if (y >= upperBorder) {
             dodgeRobot(distance * -1);
             //System.out.println("Oben");
         } else {
-            if (y <= wallBottom) {
-                setTurnRight(getHeading() * -1);
+            if (y <= lowerBorder) {
                 dodgeRobot(distance * -1);
                 //System.out.println("Unten");
 
             } else {
-                if (x >= wallRight) {
-                    setTurnRight(getHeading() * -1);
+                if (x >= rightBorder) {
                     dodgeRobot(distance * -1);
                     //System.out.println("Rechts");
 
                 } else {
-                    if (x <= wallLeft) {
-                        setTurnRight(getHeading() * -1);
+                    if (x <= leftBorder) {
                         dodgeRobot(distance * -1);
                         //System.out.println("Links");
 
@@ -198,46 +230,14 @@ public class Prototype_Best extends RobotBase {
             double xEnemy = enemyCoordinates.getTargetInfo().getX();
             double yEnemy = enemyCoordinates.getTargetInfo().getY();
 
-            if (80 > Math.sqrt(((x - xEnemy) * (x - xEnemy)) + ((y - yEnemy) * (y - yEnemy)))) {
+            if (MIN_ROBOT_DISTANCE > Math.sqrt(((x - xEnemy) * (x - xEnemy)) + ((y - yEnemy) * (y - yEnemy)))) {
+                setTurnRight(RobotHelper.RANDOM.nextBoolean() ? 90 : -90);
                 super.setAhead(distance * -1);
             } else {
                 super.setAhead(distance);
             }
         }
 
-
-    }
-
-    /**
-     * Testing if Movement possible
-     */
-    @Override
-    public void setAhead(double distance) {
-        dodgeWall(distance);
-        dodgeRobot(distance);
-        //System.out.println("distance=" + distance);
-    }
-
-    /**
-     * Redirecting after Collision with Enemy
-     */
-    @Override
-    public void onHitRobot(HitRobotEvent event) {
-        super.onHitRobot(event);
-
-        setTurnRight(90);
-        setAhead(400);
-    }
-
-    /**
-     * Redirecting after hitting Wall, not in use during dodgeWall active
-     */
-    @Override
-    public void onHitWall(HitWallEvent event) {
-        super.onHitWall(event);
-        double turnHitWall = 120;
-        setTurnRight(turnHitWall);
-        setAhead(200);
 
     }
 }

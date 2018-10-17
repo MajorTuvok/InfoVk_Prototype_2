@@ -13,9 +13,14 @@ import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.PrintStream;
 import java.util.*;
 
 public class RobotBase extends SimpleRobot implements Constants {
+    private static final String BULLET_HISTORY = "bullets.stats";
     private static int HISTORY_SIZE = 5;
     private double energyPowerFactor;
     private double disFactor;
@@ -65,7 +70,6 @@ public class RobotBase extends SimpleRobot implements Constants {
     }
 
     /**
-     *
      * use {@link #fire(double, RobotInfo)}
      */
     @Override
@@ -119,9 +123,11 @@ public class RobotBase extends SimpleRobot implements Constants {
         mBulletManager.onBulletHitBullet(ex);
     }
 
-
-    protected void start() {
-
+    @Override
+    public void onBulletMissed(BulletMissedEvent ex) {
+        super.onBulletMissed(ex);
+        mBulletManager.onBulletMissed(ex);
+        getColorHandler().rainbow();
     }
 
     protected void loop() {
@@ -129,9 +135,9 @@ public class RobotBase extends SimpleRobot implements Constants {
     }
 
     @Override
-    public void onBulletMissed(BulletMissedEvent ex) {
-        super.onBulletMissed(ex);
-        mBulletManager.onBulletMissed(ex);
+    public void onRoundEnded(RoundEndedEvent event) {
+        super.onRoundEnded(event);
+        writeBulletHistory();
     }
 
     @Override
@@ -194,6 +200,26 @@ public class RobotBase extends SimpleRobot implements Constants {
         BulletSerializer.serializeBullets(System.out, mBulletManager);
     }
 
+    protected void start() {
+        readBulletHistory();
+    }
+
+    private void readBulletHistory() {
+        try (LineNumberReader reader = new LineNumberReader(new FileReader(getDataFile(BULLET_HISTORY)))) {
+            BulletSerializer.deserializeBullets(reader, mBulletManager);
+        } catch (IOException e) {
+            System.err.println("Failed to write data for " + BULLET_HISTORY);
+        }
+    }
+
+    private void writeBulletHistory() {
+        try (PrintStream writer = new PrintStream(new RobocodeFileOutputStream(getDataFile(BULLET_HISTORY)))) {
+            BulletSerializer.serializeBullets(writer, mBulletManager);
+        } catch (IOException e) {
+            System.err.println("Failed to identify Data File " + BULLET_HISTORY);
+        }
+    }
+
     public final class BulletManager {
         private final Set<PositionalBulletCache> mBullets;
         private final Map<String, Integer> mHitBullets;
@@ -216,6 +242,19 @@ public class RobotBase extends SimpleRobot implements Constants {
 
         public BulletView getView() {
             return mView;
+        }
+
+        public void injectBulletView(BulletView view) {
+            System.out.println("Injecting BulletView");
+            mBullets.clear();
+            mHitBullets.clear();
+            mMissedBullets.clear();
+            mShieldedBullets.clear();
+            mBullets.addAll(view.getActiveBullets());
+            mHitBullets.putAll(view.getHitBullets());
+            mMissedBullets.putAll(view.getMissedBullets());
+            mShieldedBullets.putAll(view.getShieldedBullets());
+            System.out.println("Bullet History now consists of " + mHitBullets.entrySet().size() + " elements.");
         }
 
         private void onFire(FireInfo info) {
@@ -334,35 +373,35 @@ public class RobotBase extends SimpleRobot implements Constants {
         private void incrementShieldedBullets(String target) {
             mShieldedBullets.put(target, mShieldedBullets.getOrDefault(target, 0) + 1);
         }
+    }
 
-        public final class BulletView {
-            private final Set<PositionalBulletCache> mBullets;
-            private final Map<String, Integer> mHitBullets;
-            private final Map<String, Integer> mMissedBullets;
-            private final Map<String, Integer> mShieldedBullets;
+    public static final class BulletView {
+        private final Set<PositionalBulletCache> mBullets;
+        private final Map<String, Integer> mHitBullets;
+        private final Map<String, Integer> mMissedBullets;
+        private final Map<String, Integer> mShieldedBullets;
 
-            private BulletView(Set<PositionalBulletCache> bullets, Map<String, Integer> hitBullets, Map<String, Integer> missedBullets, Map<String, Integer> shieldedBullets) {
-                mBullets = bullets;
-                mHitBullets = hitBullets;
-                mMissedBullets = missedBullets;
-                mShieldedBullets = shieldedBullets;
-            }
+        public BulletView(Set<PositionalBulletCache> bullets, Map<String, Integer> hitBullets, Map<String, Integer> missedBullets, Map<String, Integer> shieldedBullets) {
+            mBullets = bullets;
+            mHitBullets = hitBullets;
+            mMissedBullets = missedBullets;
+            mShieldedBullets = shieldedBullets;
+        }
 
-            public Set<PositionalBulletCache> getActiveBullets() {
-                return mBullets;
-            }
+        public Set<PositionalBulletCache> getActiveBullets() {
+            return mBullets;
+        }
 
-            public Map<String, Integer> getHitBullets() {
-                return mHitBullets;
-            }
+        public Map<String, Integer> getHitBullets() {
+            return mHitBullets;
+        }
 
-            public Map<String, Integer> getMissedBullets() {
-                return mMissedBullets;
-            }
+        public Map<String, Integer> getMissedBullets() {
+            return mMissedBullets;
+        }
 
-            public Map<String, Integer> getShieldedBullets() {
-                return mShieldedBullets;
-            }
+        public Map<String, Integer> getShieldedBullets() {
+            return mShieldedBullets;
         }
     }
 
