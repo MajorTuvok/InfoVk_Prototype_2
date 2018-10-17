@@ -9,6 +9,8 @@ import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.ScannedRobotEvent;
 
+import java.util.Map;
+
 public class Prototype_Best extends RobotBase {
 
 
@@ -23,8 +25,8 @@ public class Prototype_Best extends RobotBase {
     protected void loop() {
         super.loop();
         setTurnRadarRight(360);
-        double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
-        double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
+        double turn = randomFixedRange(-90, 90, -10, 10);
+        double move = randomFixedRange(-50, 50, -10, 10);
         setTurnRight(turn);
         setAhead(move);
         //rainbow();
@@ -57,7 +59,7 @@ public class Prototype_Best extends RobotBase {
         fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
 
         PositionalRobotCache lastValue = getCache(event.getName(), 1);
-        System.out.println(lastValue);
+        //System.out.println("lastVallue=" + lastValue);
 
         if (lastValue != null) {
             double oldEnergy = lastValue.getEnergy();
@@ -65,12 +67,25 @@ public class Prototype_Best extends RobotBase {
 
             if (oldEnergy > newEnergy) {
                 double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
-                double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
                 setTurnRight(turn);
-                setAhead(move);
+                setAhead(randomFixedRange(-150, 150, -41, 41));
             }
         }
         scan();
+    }
+
+
+    //Save Movement over BotSize
+    public double randomFixedRange(double min, double max, double exMin, double exMax) {
+        assert min <= exMin && exMin <= exMax && exMax <= max;
+        boolean aboveEx = RobotHelper.RANDOM.nextBoolean();
+        double movement = 0;
+        if (aboveEx) {
+            movement = RobotHelper.RANDOM.nextDouble() * (max - exMax) + exMax;
+        } else {
+            movement = RobotHelper.RANDOM.nextDouble() * (exMin - min) + min;
+        }
+        return movement;
     }
 
     //Redirecting and correcting Gun toward Enemy, still uncorrect
@@ -86,10 +101,6 @@ public class Prototype_Best extends RobotBase {
         double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
 
         setTurnGunRight(toTurnGun + correctionGun);
-
-
-        // System.out.println(toTurnGun);
-        //System.out.println(correctionGun);
     }
 
     //Change Position after hit by Enemy
@@ -106,52 +117,76 @@ public class Prototype_Best extends RobotBase {
         setAhead(move);
     }
 
+    //Dodging Walls
+    public void dodgeWall(double distance) {
+        double x = getX();
+        double y = getY();
 
-     /*
+        double wallTop = getBattleFieldHeight() * 0.7;
+        double wallRight = getBattleFieldWidth() * 0.7;
+        double wallBottom = getBattleFieldHeight() * 0.3;
+        double wallLeft = getBattleFieldWidth() * 0.3;
 
-     public void dodgeWall(){
-     double x = getX();   //Eigene Koordinaten
-     double y = getY();
-        Point pos = new Point(x,y);
-        Point robotDirection = Point.fromPolarCoordinates(getHeading(),1).subtract(pos);
-     //Wand koords linke x0,y-achse
-     //Wand koords unten x-achse, y0
-     //Wand koords oben xachse, ymax
-     //wand koords rechts xmax, yachse
+        if (y >= wallTop) {
+            setTurnRight(getHeading() * -1);
+            dodgeRobot(distance * -1);
+            //System.out.println("Oben");
+        } else {
+            if (y <= wallBottom) {
+                setTurnRight(getHeading() * -1);
+                dodgeRobot(distance * -1);
+                //System.out.println("Unten");
 
-     if (0<=x && x<=40){ //Linke wand
-         Point y_axis = RobotHelper.Y_AXIS;
-         double angle = y_axis.angleFrom(robotDirection);
-         System.out.println("zu y" +angle);
-         setTurnRight(angle);
-     }
-     else {
-         if (0 <= y && y >= 40) { //Untere Wand
-             Point x_axis = RobotHelper.X_AXIS;
-             double angle = x_axis.angleFrom(robotDirection);
-             System.out.println("zu x" +angle);
-             setTurnRight(angle);
-         } else {
-             if (getBattleFieldHeight() <= y && y >= (getBattleFieldHeight() - 40)) { //obere Wand
-                 Point x_axis = RobotHelper.X_AXIS;
-                 double angle = x_axis.angleFrom(robotDirection);
-                 System.out.println("zu oben" +angle);
-                 setTurnRight(angle);
-             } else {
-                 if (getBattleFieldWidth() <= x && x >= getBattleFieldWidth() - 40) { //rechte wand
-                     Point y_axis = RobotHelper.Y_AXIS;
-                     double angle = y_axis.angleFrom(robotDirection);
-                     System.out.println("zu rechts" +angle);
-                     setTurnRight(angle);
-                 }
-             }
-         }
-     }
-}
+            } else {
+                if (x >= wallRight) {
+                    setTurnRight(getHeading() * -1);
+                    dodgeRobot(distance * -1);
+                    //System.out.println("Rechts");
+
+                } else {
+                    if (x <= wallLeft) {
+                        setTurnRight(getHeading() * -1);
+                        dodgeRobot(distance * -1);
+                        //System.out.println("Links");
+
+                    } else {
+                        dodgeRobot(distance);
+                    }
+                }
+            }
+        }
+    }
+
+    //Dodging Robots
+    public void dodgeRobot(double distance) {
+
+        double x = getX();
+        double y = getY();
+
+        Map<String, PositionalRobotCache> enemy = getLatestTargetView();
+
+        for (Map.Entry<String, PositionalRobotCache> entry : enemy.entrySet()) {
+            PositionalRobotCache enemyCoordinates = entry.getValue();
+            double xEnemy = enemyCoordinates.getTargetInfo().getX();
+            double yEnemy = enemyCoordinates.getTargetInfo().getY();
+
+            if (80 > Math.sqrt(((x - xEnemy) * (x - xEnemy)) + ((y - yEnemy) * (y - yEnemy)))) {
+                super.setAhead(distance * -1);
+            } else {
+                super.setAhead(distance);
+            }
+        }
 
 
-*/
+    }
 
+    //Testing if movement possible
+    @Override
+    public void setAhead(double distance) {
+        dodgeWall(distance);
+        dodgeRobot(distance);
+        //System.out.println("distance=" + distance);
+    }
 
     //Redirecting after Collision with Enemy
     @Override
@@ -166,9 +201,9 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onHitWall(HitWallEvent event) {
         super.onHitWall(event);
-        double turnHitWall = 90;
+        double turnHitWall = 120;
         setTurnRight(turnHitWall);
-        setAhead(200 * -1);
+        setAhead(200);
 
     }
 }
