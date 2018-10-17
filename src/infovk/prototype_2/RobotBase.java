@@ -163,11 +163,19 @@ public class RobotBase extends SimpleRobot implements Constants {
     }
 
     protected void fireRelativeToEnergy(RobotInfo target, double baseVal) {
-        fire(Math.max(Math.min(baseVal * getEnergy() / energyPowerFactor, Rules.MAX_BULLET_POWER), Rules.MIN_BULLET_POWER), target);
+        fire(getPowerRelToEnergy(baseVal), target);
     }
 
     protected void fireRelativeToEnergyAndDistance(RobotInfo target, double baseVal, double distance) {
-        fireRelativeToEnergy(target, baseVal - (int) distance / disFactor);
+        fire(getPowerRelToEnergyAndDistance(baseVal, distance), target);
+    }
+
+    protected double getPowerRelToEnergy(double baseVal) {
+        return RobotHelper.getRelativeEnergyPower(baseVal, getEnergy(), energyPowerFactor);
+    }
+
+    protected double getPowerRelToEnergyAndDistance(double baseVal, double distance) {
+        return RobotHelper.getRelativeEnergyAndDistancePower(baseVal, getEnergy(), energyPowerFactor, distance, disFactor);
     }
 
     private Bullet performSetFireBullet(double power) {

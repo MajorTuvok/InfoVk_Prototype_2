@@ -1,6 +1,7 @@
 package infovk.prototype_2.helper;
 
 import robocode.Robot;
+import robocode.Rules;
 import robocode.ScannedRobotEvent;
 import robocode.util.Utils;
 
@@ -19,6 +20,13 @@ public class RobotHelper {
         return new ScannedRobotEvent(robot.getName(), robot.getEnergy(), 0, 0, robot.getHeading(), robot.getVelocity(), false);
     }
 
+    public static final double getRelativeEnergyPower(double baseVal, double energy, double energyPowerFactor) {
+        return Math.max(Math.min(baseVal * energy / energyPowerFactor, Rules.MAX_BULLET_POWER), Rules.MIN_BULLET_POWER);
+    }
+
+    public static final double getRelativeEnergyAndDistancePower(double baseVal, double energy, double energyPowerFactor, double distance, double distanceFactor) {
+        return getRelativeEnergyPower(baseVal - (int) (distance / distanceFactor), energy, energyPowerFactor);
+    }
     /*
     public static final ScannedRobotEvent scannedRobot(Robot scanned, Robot scanner) {
         return new ScannedRobotEvent(scanned.getName(),scanned.getEnergy(),0,0,scanned.getHeading(),scanned.getVelocity(),false);
