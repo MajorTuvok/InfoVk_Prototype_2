@@ -47,25 +47,25 @@ public class RobotBase extends SimpleRobot implements Constants {
     }
 
     /**
-     * use {@link #setFire(double, RobotInfo)}
+     * use {@link #fire(double, RobotInfo)}
      */
     @Override
     @Deprecated
-    public void setFire(double power) {
+    public void fire(double power) {
         mBulletManager.onFire(new FireInfo(getTime(), power, null));
     }
 
     /**
      *
-     * use {@link #setFire(double, RobotInfo)}
+     * use {@link #fire(double, RobotInfo)}
      */
     @Override
     @Deprecated
-    public Bullet setFireBullet(double power) {
+    public Bullet fireBullet(double power) {
         throw new UnsupportedOperationException("No longer supported!");
     }
 
-    public void setFire(double power, RobotInfo target) {
+    public void fire(double power, RobotInfo target) {
         mBulletManager.onFire(new FireInfo(getTime(), power, target));
     }
 
@@ -79,7 +79,6 @@ public class RobotBase extends SimpleRobot implements Constants {
         execute();
 
         while (true) {
-            mBulletManager.performFire();
 
             if (behavior != null) {
                 behavior.execute();
@@ -148,57 +147,42 @@ public class RobotBase extends SimpleRobot implements Constants {
         return velocity;
     }
 
-    /**
-     *
-     * use {@link #fireRelativeToEnergy(RobotInfo, double)}
-     */
-    @Deprecated
-    protected void fireRelativeToEnergy(double baseVal) {
-        setFire(Math.max(Math.min(baseVal * getEnergy() / energyPowerFactor, 4), 0.1));
-    }
-
-    /**
-     *
-     * use {@link #fireRelativeToEnergyAndDistance(RobotInfo, double, double)}
-     */
-    @Deprecated
-    protected void fireRelativeToEnergyAndDistance(double baseVal, double distance) {
-        fireRelativeToEnergy(baseVal - (int) distance / disFactor);
-    }
-
     protected void fireRelativeToEnergy(RobotInfo target, double baseVal) {
-        setFire(Math.max(Math.min(baseVal * getEnergy() / energyPowerFactor, Rules.MAX_BULLET_POWER), Rules.MIN_BULLET_POWER), target);
+        fire(Math.max(Math.min(baseVal * getEnergy() / energyPowerFactor, Rules.MAX_BULLET_POWER), Rules.MIN_BULLET_POWER), target);
     }
 
     protected void fireRelativeToEnergyAndDistance(RobotInfo target, double baseVal, double distance) {
         fireRelativeToEnergy(target, baseVal - (int) distance / disFactor);
     }
 
-    private Bullet performSetFireBullet(double power) {
-        return super.setFireBullet(power);
+    private Bullet performFireBullet(double power) {
+        return super.fireBullet(power);
     }
 
     private final class BulletManager {
-        private BulletFireManager mBulletFireManager;
         private Set<PositionalBulletCache> mBullets;
-        private HashMap<String, Integer> mHitBullets;
-        private HashMap<String, Integer> mMissedBullets;
-        private HashMap<String, Integer> mShieldedBullets;
+        private Map<String, Integer> mHitBullets;
+        private Map<String, Integer> mMissedBullets;
+        private Map<String, Integer> mShieldedBullets;
 
         private BulletManager() {
             mBullets = new HashSet<>();
             mHitBullets = new HashMap<>();
             mMissedBullets = new HashMap<>();
             mShieldedBullets = new HashMap<>();
-            mBulletFireManager = new BulletFireManager();
         }
 
         public void onFire(FireInfo info) {
-            mBulletFireManager.onFire(info);
-        }
-
-        public void performFire() {
-            mBulletFireManager.performFire();
+            Bullet b = RobotBase.this.performFireBullet(info.getPower());
+            if (info.getTarget() == null) {
+                System.err.println("Firing Bullet (power=" + info.getPower() + ") without target!");
+                onFireBullet(b);
+            } else {
+                if (DEBUG) {
+                    System.out.println("Firing Bullet at " + info.getTarget().getName() + " with Power " + info.getPower());
+                }
+                onFireBullet(b, info.getTarget());
+            }
         }
 
         private void onFireBullet(Bullet bullet) {
@@ -303,41 +287,6 @@ public class RobotBase extends SimpleRobot implements Constants {
 
         private void incrementShieldedBullets(String target) {
             mShieldedBullets.put(target, mShieldedBullets.getOrDefault(target, 0) + 1);
-        }
-
-        private class BulletFireManager {
-            private List<FireInfo> mBullets;
-
-            public BulletFireManager() {
-                mBullets = new LinkedList<>();
-            }
-
-            private void onFire(FireInfo info) {
-                mBullets.add(info);
-                if (info.getTarget() == null) {
-                    System.err.println("Firing Bullet (power=" + info.getPower() + ") without target!");
-                } else {
-                    if (DEBUG) {
-                        System.out.println("Firing Bullet at " + info.getTarget().getName() + " with Power " + info.getPower());
-                    }
-                }
-            }
-
-            private void performFire() {
-                List<FireInfo> toRemove = new ArrayList<>(mBullets.size());
-                for (FireInfo info : mBullets) {
-                    if (info.getTime() + 1 >= RobotBase.this.getTime() || RobotBase.this.getGunTurnRemaining() != 0) {
-                        Bullet b = RobotBase.this.performSetFireBullet(info.getPower());
-                        if (info.getTarget() != null) {
-                            BulletManager.this.onFireBullet(b, info.getTarget());
-                        } else {
-                            BulletManager.this.onFireBullet(b);
-                        }
-                        toRemove.add(info);
-                    }
-                }
-                mBullets.removeAll(toRemove);
-            }
         }
     }
 

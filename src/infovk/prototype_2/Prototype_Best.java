@@ -2,7 +2,7 @@ package infovk.prototype_2;
 
 
 import infovk.prototype_2.helper.Point;
-import infovk.prototype_2.helper.RobotCache;
+import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
 import infovk.prototype_2.helper.RobotHelper;
 import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
@@ -43,8 +43,9 @@ public class Prototype_Best extends RobotBase {
     public void onScannedRobot(ScannedRobotEvent event) {
         super.onScannedRobot(event);
 
-        Point coordinates = getRecentCache(event.getName()).getScannerInfo().getPos();
-        Point enemyCoordinates = getRecentCache(event.getName()).getTargetInfo().getPos();
+        PositionalRobotCache cache = getRecentCache(event.getName());
+        Point coordinates = cache.getScannerInfo().getPos();
+        Point enemyCoordinates = cache.getTargetInfo().getPos();
         Point distance = new Point(enemyCoordinates.getX() - coordinates.getX(), enemyCoordinates.getY() - coordinates.getY());
 
         double absoluteBearing = getHeading() + event.getBearing();
@@ -53,7 +54,9 @@ public class Prototype_Best extends RobotBase {
         double distanceToEnemy = event.getDistance();
 
         setTurnRadarRight(toTurnRadar);
-        targetGun(event.getName(), distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
+        targetGun(cache, distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
+        fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
+
         double oldEnergy = getCache(event.getName(), 1).getEnergy();
         double newEnergy = event.getEnergy();
 
@@ -68,14 +71,13 @@ public class Prototype_Best extends RobotBase {
     }
 
     //Redirecting and correcting Gun toward Enemy, still uncorrect
-    public void targetGun(String enemy, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
-        RobotCache.PositionalRobotCache cache = getRecentCache(enemy);
+    public void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
         double direction = cache.getHeading();
 
         double turnGun = bearing - getGunHeading();
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
 
-        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(enemy));
+        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(cache.getName()));
         Point target = enemyCoordinates.add(movement).add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
         Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
         double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
