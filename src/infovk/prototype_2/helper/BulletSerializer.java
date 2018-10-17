@@ -1,7 +1,6 @@
 package infovk.prototype_2.helper;
 
 import infovk.prototype_2.RobotBase.BulletManager;
-import infovk.prototype_2.RobotBase.BulletView;
 
 import java.io.IOException;
 import java.io.LineNumberReader;

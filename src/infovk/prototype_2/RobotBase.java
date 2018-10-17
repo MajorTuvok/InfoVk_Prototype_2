@@ -9,7 +9,9 @@ import robocode.BulletHitBulletEvent;
 import robocode.BulletHitEvent;
 import robocode.BulletMissedEvent;
 import robocode.*;
-import robocode.Robot;
+import robocode.HitByBulletEvent;
+import robocode.HitRobotEvent;
+import robocode.HitWallEvent;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
@@ -19,9 +21,8 @@ import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.util.*;
 
-public class RobotBase extends SimpleRobot implements Constants {
+public abstract class RobotBase extends SimpleRobot implements Constants {
     private static final String BULLET_HISTORY = "bullets.stats";
-    private static int HISTORY_SIZE = 5;
     private double energyPowerFactor;
     private double disFactor;
     private BulletManager mBulletManager;
@@ -35,6 +36,8 @@ public class RobotBase extends SimpleRobot implements Constants {
         mBulletManager = new BulletManager();
         mColorHandler = new ColorHandler();
     }
+
+    protected abstract BehaviourType getBehaviourType();
 
     protected double getEnergyPowerFactor() {
         return energyPowerFactor;
@@ -113,21 +116,33 @@ public class RobotBase extends SimpleRobot implements Constants {
 
     @Override
     public void onBulletHit(BulletHitEvent ex) {
-        super.onBulletHit(ex);
         mBulletManager.onBulletHit(ex);
     }
 
     @Override
     public void onBulletHitBullet(BulletHitBulletEvent ex) {
-        super.onBulletHitBullet(ex);
         mBulletManager.onBulletHitBullet(ex);
     }
 
     @Override
     public void onBulletMissed(BulletMissedEvent ex) {
-        super.onBulletMissed(ex);
         mBulletManager.onBulletMissed(ex);
         getColorHandler().rainbow();
+    }
+
+    @Override
+    public void onHitByBullet(HitByBulletEvent ex) {
+
+    }
+
+    @Override
+    public void onHitRobot(HitRobotEvent ex) {
+
+    }
+
+    @Override
+    public void onHitWall(HitWallEvent ex) {
+
     }
 
     protected void loop() {
@@ -142,7 +157,6 @@ public class RobotBase extends SimpleRobot implements Constants {
 
     @Override
     public void onScannedRobot(ScannedRobotEvent ex) {
-        super.onScannedRobot(ex);
         mRobotHistory.updateCache(ex, this);
         getColorHandler().rainbow();
     }
@@ -372,109 +386,6 @@ public class RobotBase extends SimpleRobot implements Constants {
 
         private void incrementShieldedBullets(String target) {
             mShieldedBullets.put(target, mShieldedBullets.getOrDefault(target, 0) + 1);
-        }
-    }
-
-    public static final class BulletView {
-        private final Set<PositionalBulletCache> mBullets;
-        private final Map<String, Integer> mHitBullets;
-        private final Map<String, Integer> mMissedBullets;
-        private final Map<String, Integer> mShieldedBullets;
-
-        public BulletView(Set<PositionalBulletCache> bullets, Map<String, Integer> hitBullets, Map<String, Integer> missedBullets, Map<String, Integer> shieldedBullets) {
-            mBullets = bullets;
-            mHitBullets = hitBullets;
-            mMissedBullets = missedBullets;
-            mShieldedBullets = shieldedBullets;
-        }
-
-        public Set<PositionalBulletCache> getActiveBullets() {
-            return mBullets;
-        }
-
-        public Map<String, Integer> getHitBullets() {
-            return mHitBullets;
-        }
-
-        public Map<String, Integer> getMissedBullets() {
-            return mMissedBullets;
-        }
-
-        public Map<String, Integer> getShieldedBullets() {
-            return mShieldedBullets;
-        }
-    }
-
-    private static final class RobotHistory {
-        private Map<String, SortedSet<PositionalRobotCache>> targets;
-
-        public RobotHistory() {
-            targets = new HashMap<>();
-        }
-
-        private PositionalRobotCache getRecentCacheForTarget(String target) {
-            return targets.get(target).first();
-        }
-
-        private Map<String, PositionalRobotCache> getLatestTargetView() {
-            Map<String, PositionalRobotCache> mapping = new HashMap<>();
-            for (Map.Entry<String, SortedSet<PositionalRobotCache>> entry : targets.entrySet()) {
-                mapping.put(entry.getKey(), entry.getValue().first());
-            }
-            return mapping;
-        }
-
-        private void updateCache(ScannedRobotEvent event, Robot scanner) {
-            SortedSet<PositionalRobotCache> set = targets.getOrDefault(event.getName(), new TreeSet<>(RobotCache.TIME_COMPARATOR));
-            set.add(RobotCache.fromEventAndScanner(event, scanner));
-            while (set.size() > HISTORY_SIZE)
-                set.remove(set.last());
-            targets.put(event.getName(), set);
-        }
-
-        private PositionalRobotCache getCache(String target, int index) {
-            if (index == 0) {
-                return getRecentCacheForTarget(target);
-            }
-            SortedSet<PositionalRobotCache> set = getCompleteCacheForTarget(target);
-            if (set == null || set.isEmpty()) return null;
-            int count = 0;
-            for (PositionalRobotCache cache : set) {
-                if (count == index) {
-                    return cache;
-                }
-                count++;
-            }
-            return null;
-        }
-
-        private SortedSet<PositionalRobotCache> getCompleteCacheForTarget(String target) {
-            return targets.getOrDefault(target, Collections.emptySortedSet());
-        }
-
-    }
-
-    private static final class FireInfo {
-        private final double mPower;
-        private final RobotInfo mTarget;
-        private final long mTime;
-
-        public FireInfo(long time, double power, RobotInfo target) {
-            mPower = power;
-            mTarget = target;
-            mTime = time;
-        }
-
-        public double getPower() {
-            return mPower;
-        }
-
-        public RobotInfo getTarget() {
-            return mTarget;
-        }
-
-        public long getTime() {
-            return mTime;
         }
     }
 

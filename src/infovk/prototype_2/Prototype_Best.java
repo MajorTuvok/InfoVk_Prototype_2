@@ -19,6 +19,11 @@ public class Prototype_Best extends RobotBase {
     private double rightBorder = Double.MAX_VALUE;
     private double upperBorder = Double.MAX_VALUE;
 
+    @Override
+    protected BehaviourType getBehaviourType() {
+        return BehaviourType.DEFAULT;
+    }
+
     /**
      * Redirecting after Collision with Enemy
      */
