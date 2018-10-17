@@ -54,6 +54,10 @@ public class RobotBase extends SimpleRobot implements Constants {
         return mColorHandler;
     }
 
+    protected Map<String, PositionalRobotCache> getLatestTargetView() {
+        return mRobotHistory.getLatestTargetView();
+    }
+
     /**
      * use {@link #fire(double, RobotInfo)}
      */
@@ -173,20 +177,31 @@ public class RobotBase extends SimpleRobot implements Constants {
         return super.setFireBullet(power);
     }
 
-    private final class BulletManager {
-        private Set<PositionalBulletCache> mBullets;
-        private Map<String, Integer> mHitBullets;
-        private Map<String, Integer> mMissedBullets;
-        private Map<String, Integer> mShieldedBullets;
+    public final class BulletManager {
+        private final Set<PositionalBulletCache> mBullets;
+        private final Map<String, Integer> mHitBullets;
+        private final Map<String, Integer> mMissedBullets;
+        private final Map<String, Integer> mShieldedBullets;
+        private final BulletView mView;
 
         private BulletManager() {
             mBullets = new HashSet<>();
             mHitBullets = new HashMap<>();
             mMissedBullets = new HashMap<>();
             mShieldedBullets = new HashMap<>();
+            mView = new BulletView(
+                    Collections.unmodifiableSet(mBullets),
+                    Collections.unmodifiableMap(mHitBullets),
+                    Collections.unmodifiableMap(mMissedBullets),
+                    Collections.unmodifiableMap(mShieldedBullets)
+            );
         }
 
-        public void onFire(FireInfo info) {
+        public BulletView getView() {
+            return mView;
+        }
+
+        private void onFire(FireInfo info) {
             Bullet b = RobotBase.this.performSetFireBullet(info.getPower());
             if (info.getTarget() == null) {
                 System.err.println("Firing Bullet (power=" + info.getPower() + ") without target!");
@@ -302,6 +317,36 @@ public class RobotBase extends SimpleRobot implements Constants {
         private void incrementShieldedBullets(String target) {
             mShieldedBullets.put(target, mShieldedBullets.getOrDefault(target, 0) + 1);
         }
+
+        public final class BulletView {
+            private final Set<PositionalBulletCache> mBullets;
+            private final Map<String, Integer> mHitBullets;
+            private final Map<String, Integer> mMissedBullets;
+            private final Map<String, Integer> mShieldedBullets;
+
+            private BulletView(Set<PositionalBulletCache> bullets, Map<String, Integer> hitBullets, Map<String, Integer> missedBullets, Map<String, Integer> shieldedBullets) {
+                mBullets = bullets;
+                mHitBullets = hitBullets;
+                mMissedBullets = missedBullets;
+                mShieldedBullets = shieldedBullets;
+            }
+
+            public Set<PositionalBulletCache> getActiveBullets() {
+                return mBullets;
+            }
+
+            public Map<String, Integer> getHitBullets() {
+                return mHitBullets;
+            }
+
+            public Map<String, Integer> getMissedBullets() {
+                return mMissedBullets;
+            }
+
+            public Map<String, Integer> getShieldedBullets() {
+                return mShieldedBullets;
+            }
+        }
     }
 
     private static final class RobotHistory {
@@ -313,6 +358,14 @@ public class RobotBase extends SimpleRobot implements Constants {
 
         private PositionalRobotCache getRecentCacheForTarget(String target) {
             return targets.get(target).first();
+        }
+
+        private Map<String, PositionalRobotCache> getLatestTargetView() {
+            Map<String, PositionalRobotCache> mapping = new HashMap<>();
+            for (Map.Entry<String, SortedSet<PositionalRobotCache>> entry : targets.entrySet()) {
+                mapping.put(entry.getKey(), entry.getValue().first());
+            }
+            return mapping;
         }
 
         private void updateCache(ScannedRobotEvent event, Robot scanner) {
