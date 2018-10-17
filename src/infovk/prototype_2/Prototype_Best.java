@@ -26,7 +26,8 @@ public class Prototype_Best extends RobotBase {
         double turn = (RobotHelper.RANDOM.nextDouble() * 180) - 90;
         double move = (RobotHelper.RANDOM.nextDouble() * 100) - 50;
         setTurnRight(turn);
-        ahead(move);
+        setAhead(move);
+        //rainbow();
     }
 
     //Searching Enemy, holding Radar on it, firing Cannon, trying to dodge Enemy`s Bullets
@@ -43,19 +44,31 @@ public class Prototype_Best extends RobotBase {
         double turnRadar = absoluteBearing - getRadarHeading();
         double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
         double distanceToEnemy = event.getDistance();
+        double random = RobotHelper.RANDOM.nextDouble();
+
+        if (toTurnRadar < 0) {
+            toTurnRadar = toTurnRadar + 1;
+        } else {
+            toTurnRadar = toTurnRadar - 1;
+        }
 
         setTurnRadarRight(toTurnRadar);
         targetGun(cache, distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
         fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
 
-        double oldEnergy = getCache(event.getName(), 1).getEnergy();
-        double newEnergy = event.getEnergy();
+        PositionalRobotCache lastValue = getCache(event.getName(), 1);
+        System.out.println(lastValue);
 
-        if (oldEnergy > newEnergy) {
-            double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
-            double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
-            setTurnRight(turn);
-            setAhead(move);
+        if (lastValue != null) {
+            double oldEnergy = lastValue.getEnergy();
+            double newEnergy = event.getEnergy();
+
+            if (oldEnergy > newEnergy) {
+                double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
+                double move = (RobotHelper.RANDOM.nextDouble() * 300) - 150;
+                setTurnRight(turn);
+                setAhead(move);
+            }
         }
         scan();
     }
@@ -68,13 +81,13 @@ public class Prototype_Best extends RobotBase {
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
 
         Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(cache.getName()));
-        Point target = enemyCoordinates.add(movement).add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
+        Point target = enemyCoordinates.add(movement).add(movement);//nTurns vorraus, beliebig erweiterbar
         Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
         double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
 
         setTurnGunRight(toTurnGun + correctionGun);
 
-        scan();
+
         // System.out.println(toTurnGun);
         //System.out.println(correctionGun);
     }
@@ -90,7 +103,7 @@ public class Prototype_Best extends RobotBase {
         if (random > 0.5) {
             move = move * -1;
         }
-        ahead(move);
+        setAhead(move);
     }
 
 
@@ -146,7 +159,7 @@ public class Prototype_Best extends RobotBase {
         super.onHitRobot(event);
 
         setTurnRight(90);
-        ahead(400);
+        setAhead(400);
     }
 
     //Redirecting after hitting Wall, could be ignored if Method to WallDodge ready
@@ -154,7 +167,8 @@ public class Prototype_Best extends RobotBase {
     public void onHitWall(HitWallEvent event) {
         super.onHitWall(event);
         double turnHitWall = 90;
-        ahead(200 * -1);
         setTurnRight(turnHitWall);
+        setAhead(200 * -1);
+
     }
 }
