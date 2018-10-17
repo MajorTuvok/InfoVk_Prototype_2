@@ -13,26 +13,32 @@ import java.util.Map;
 
 public class Prototype_Best extends RobotBase {
 
-
-    //Initializing StartSetup
+    /**
+     * Initializing StartSetup
+     */
     @Override
     protected void start() {
         super.start();
     }
 
-    //SettingLoop
+    /**
+     * Setting Loop
+     */
     @Override
     protected void loop() {
         super.loop();
         setTurnRadarRight(360);
         double turn = randomFixedRange(-90, 90, -10, 10);
-        double move = randomFixedRange(-50, 50, -10, 10);
+        double move = randomFixedRange(-150, 150, -41, 41
+        );
         setTurnRight(turn);
         setAhead(move);
         //rainbow();
     }
 
-    //Searching Enemy, holding Radar on it, firing Cannon, trying to dodge Enemy`s Bullets
+    /**
+     * Searching Enemy, pointing Radar, firing Cannon, trying to dodge
+     */
     @Override
     public void onScannedRobot(ScannedRobotEvent event) {
         super.onScannedRobot(event);
@@ -44,22 +50,14 @@ public class Prototype_Best extends RobotBase {
 
         double absoluteBearing = getHeading() + event.getBearing();
         double turnRadar = absoluteBearing - getRadarHeading();
-        double toTurnRadar = Utils.normalRelativeAngle(turnRadar);
         double distanceToEnemy = event.getDistance();
-        double random = RobotHelper.RANDOM.nextDouble();
 
-        if (toTurnRadar < 0) {
-            toTurnRadar = toTurnRadar + 1;
-        } else {
-            toTurnRadar = toTurnRadar - 1;
-        }
-
-        setTurnRadarRight(toTurnRadar);
+        setRadar(turnRadar);
         targetGun(cache, distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
         fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
 
         PositionalRobotCache lastValue = getCache(event.getName(), 1);
-        //System.out.println("lastVallue=" + lastValue);
+        //System.out.println("lastValue=" + lastValue);
 
         if (lastValue != null) {
             double oldEnergy = lastValue.getEnergy();
@@ -74,8 +72,24 @@ public class Prototype_Best extends RobotBase {
         scan();
     }
 
+    /**
+     * Setting Radar on Enemy
+     */
+    public void setRadar(double heading) {
+        double toTurnRadar = Utils.normalRelativeAngle(heading);
+        if (toTurnRadar < 0) {
+            toTurnRadar = toTurnRadar + 1;
+        } else {
+            toTurnRadar = toTurnRadar - 1;
+        }
 
-    //Save Movement over BotSize
+        setTurnRadarRight(toTurnRadar);
+
+    }
+
+    /**
+     * save Movement over BotSize
+     */
     public double randomFixedRange(double min, double max, double exMin, double exMax) {
         assert min <= exMin && exMin <= exMax && exMax <= max;
         boolean aboveEx = RobotHelper.RANDOM.nextBoolean();
@@ -88,7 +102,9 @@ public class Prototype_Best extends RobotBase {
         return movement;
     }
 
-    //Redirecting and correcting Gun toward Enemy, still uncorrect
+    /**
+     * Redirecting and correcting Gun toward Enemy, still uncorrect
+     */
     public void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
         double direction = cache.getHeading();
 
@@ -103,7 +119,9 @@ public class Prototype_Best extends RobotBase {
         setTurnGunRight(toTurnGun + correctionGun);
     }
 
-    //Change Position after hit by Enemy
+    /**
+     * Change Position after Hit by Enemy
+     */
     @Override
     public void onHitByBullet(HitByBulletEvent event) {
         super.onHitByBullet(event);
@@ -117,7 +135,9 @@ public class Prototype_Best extends RobotBase {
         setAhead(move);
     }
 
-    //Dodging Walls
+    /**
+     * Dodging Walls
+     */
     public void dodgeWall(double distance) {
         double x = getX();
         double y = getY();
@@ -157,7 +177,9 @@ public class Prototype_Best extends RobotBase {
         }
     }
 
-    //Dodging Robots
+    /**
+     * Dodging Robot
+     */
     public void dodgeRobot(double distance) {
 
         double x = getX();
@@ -180,7 +202,9 @@ public class Prototype_Best extends RobotBase {
 
     }
 
-    //Testing if movement possible
+    /**
+     * Testing if Movement possible
+     */
     @Override
     public void setAhead(double distance) {
         dodgeWall(distance);
@@ -188,7 +212,9 @@ public class Prototype_Best extends RobotBase {
         //System.out.println("distance=" + distance);
     }
 
-    //Redirecting after Collision with Enemy
+    /**
+     * Redirecting after Collision with Enemy
+     */
     @Override
     public void onHitRobot(HitRobotEvent event) {
         super.onHitRobot(event);
@@ -197,7 +223,9 @@ public class Prototype_Best extends RobotBase {
         setAhead(400);
     }
 
-    //Redirecting after hitting Wall, could be ignored if Method to WallDodge ready
+    /**
+     * Redirecting after hitting Wall, not in use during dodgeWall active
+     */
     @Override
     public void onHitWall(HitWallEvent event) {
         super.onHitWall(event);
