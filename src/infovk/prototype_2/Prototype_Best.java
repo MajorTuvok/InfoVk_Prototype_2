@@ -57,25 +57,31 @@ public class Prototype_Best extends RobotBase {
         fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
 
         PositionalRobotCache lastValue = getCache(event.getName(), 1);
+        double enemyEnergy = event.getEnergy();
         //System.out.println("lastValue=" + lastValue);
+        dodgeBullet(lastValue, enemyEnergy);
+        scan();
+    }
 
+    /**
+     * Dodging Bullet, depends on Enemy`s Energy, could triggered by EnergyLoss from hitting Walls or Robots
+     */
+    private void dodgeBullet(PositionalRobotCache lastValue, double enemyEnergy) {
         if (lastValue != null) {
             double oldEnergy = lastValue.getEnergy();
-            double newEnergy = event.getEnergy();
 
-            if (oldEnergy > newEnergy) {
+            if (oldEnergy > enemyEnergy) {
                 double turn = (RobotHelper.RANDOM.nextDouble() * 90) - 45;
                 setTurnRight(turn);
                 setAhead(randomFixedRange(-150, 150, -41, 41));
             }
         }
-        scan();
     }
 
     /**
      * Setting Radar on Enemy
      */
-    public void setRadar(double heading) {
+    private void setRadar(double heading) {
         double toTurnRadar = Utils.normalRelativeAngle(heading);
         if (toTurnRadar < 0) {
             toTurnRadar = toTurnRadar + 1;
@@ -90,10 +96,10 @@ public class Prototype_Best extends RobotBase {
     /**
      * save Movement over BotSize
      */
-    public double randomFixedRange(double min, double max, double exMin, double exMax) {
+    private double randomFixedRange(double min, double max, double exMin, double exMax) {
         assert min <= exMin && exMin <= exMax && exMax <= max;
         boolean aboveEx = RobotHelper.RANDOM.nextBoolean();
-        double movement = 0;
+        double movement;
         if (aboveEx) {
             movement = RobotHelper.RANDOM.nextDouble() * (max - exMax) + exMax;
         } else {
@@ -105,7 +111,7 @@ public class Prototype_Best extends RobotBase {
     /**
      * Redirecting and correcting Gun toward Enemy, still uncorrect
      */
-    public void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
+    private void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
         double direction = cache.getHeading();
 
         double turnGun = bearing - getGunHeading();
@@ -138,7 +144,7 @@ public class Prototype_Best extends RobotBase {
     /**
      * Dodging Walls
      */
-    public void dodgeWall(double distance) {
+    private void dodgeWall(double distance) {
         double x = getX();
         double y = getY();
 
@@ -180,7 +186,7 @@ public class Prototype_Best extends RobotBase {
     /**
      * Dodging Robot
      */
-    public void dodgeRobot(double distance) {
+    private void dodgeRobot(double distance) {
 
         double x = getX();
         double y = getY();
