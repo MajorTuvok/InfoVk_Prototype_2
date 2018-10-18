@@ -34,7 +34,7 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
 
     public RobotBase() {
         setEnergyPowerFactor(40);
-        setDisFactor(100);
+        setDisFactor(80);
         mRobotHistory = new RobotHistory();
         mBulletManager = new BulletManager();
         mColorHandler = new ColorHandler();

@@ -23,9 +23,7 @@ public class Prototype_Best extends RobotBase {
     private double upperBorder = Double.MAX_VALUE;
     private long time;
     private boolean positiveMovement;
-    private Vector2D toTarget;
-
-    private String lastTarget = "";
+    private Vector2D attackVector = null;
     @Override
     protected BehaviourType getBehaviourType() {
         return BehaviourType.DEFAULT;
@@ -68,6 +66,26 @@ public class Prototype_Best extends RobotBase {
         setAhead(randomFixedRange(-300, 300, -70, 70));
     }
 
+    @Override
+    public void onPaint(Graphics2D g) {
+        super.onPaint(g);
+        if (attackVector != null) {
+            g.setColor(Color.RED);
+            g.drawLine((int) this.getX(), (int) this.getY(), (int) (attackVector.getX() + this.getX()), (int) (attackVector.getY() + this.getY()));
+            g.drawRect((int) (attackVector.getX() + this.getX() - this.getWidth() / 2), (int) (attackVector.getY() + this.getY() - this.getWidth() / 2), (int) this.getWidth(), (int) this.getHeight());
+        }
+        g.setColor(Color.gray);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 + 3), (int) (this.getY() - this.getWidth() / 2 - 7), 30, 50);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 - 7), (int) (this.getY() - this.getWidth() / 2 + 3), 50, 30);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 - 4), (int) (this.getY() - this.getWidth() / 2 - 4), 44, 44);
+        g.setColor(Color.green);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 + 10), (int) (this.getY() - this.getWidth() / 2 + 6), 16, 24);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 + 6), (int) (this.getY() - this.getWidth() / 2 + 10), 24, 16);
+        g.fillRect((int) (this.getX() - this.getWidth() / 2 + 8), (int) (this.getY() - this.getWidth() / 2 + 8), 20, 20);
+        g.setColor(Color.white);
+        g.fillRect((int) (this.getX() + 2), (int) (this.getY() + 2), 6, 6);
+    }
+
 
     /**
      * Searching Enemy, pointing Radar, firing Cannon, trying to dodge
@@ -75,7 +93,6 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onScannedRobot(ScannedRobotEvent event) {
         super.onScannedRobot(event);
-        lastTarget = event.getName();
         PositionalRobotCache cache = getRecentCache(event.getName());
         Vector2D coordinates = cache.getScannerInfo().getPos();
         Vector2D enemyCoordinates = cache.getTargetInfo().getPos();
@@ -95,56 +112,33 @@ public class Prototype_Best extends RobotBase {
         scan();
     }
 
-    @Override
-    public void onPaint(Graphics2D g) {
-        super.onPaint(g);
-        if (toTarget != null) {
-        	g.setColor(Color.RED);
-    		g.drawLine((int)this.getX(),(int)this.getY(),(int) (toTarget.getX()+ this.getX() -this.getWidth()/2 + 36*Math.random()),(int)(toTarget.getY()+this.getY()-this.getWidth()/2 + 36*Math.random()));
-    		g.drawRect((int)(toTarget.getX()+ this.getX() -this.getWidth()/2), (int)(toTarget.getY()+this.getY()-this.getWidth()/2), (int)this.getWidth(), (int)this.getHeight());
-        }
-        g.setColor(Color.gray);
-		g.fillRect((int)(this.getX()-this.getWidth()/2+3), (int)(this.getY()-this.getWidth()/2-7), 30, 50);
-		g.fillRect((int)(this.getX()-this.getWidth()/2-7), (int)(this.getY()-this.getWidth()/2+3), 50, 30);
-		g.fillRect((int)(this.getX()-this.getWidth()/2-4), (int)(this.getY()-this.getWidth()/2-4), 44, 44);
-		g.setColor(Color.green);
-		g.fillRect((int)(this.getX()-this.getWidth()/2+10), (int)(this.getY()-this.getWidth()/2+6), 16, 24);
-		g.fillRect((int)(this.getX()-this.getWidth()/2+6), (int)(this.getY()-this.getWidth()/2+10), 24, 16);
-		g.fillRect((int)(this.getX()-this.getWidth()/2+8), (int)(this.getY()-this.getWidth()/2+8), 20, 20);
-		g.setColor(Color.white);
-        g.fillRect((int) (this.getX() + 2), (int) (this.getY() + 2), 6, 6);
-    }
-
     /**
      * Redirecting and correcting Gun toward Enemy, still uncorrect
      */
-    private void targetGun(PositionalRobotCache cache, Vector2D distance, Vector2D enemyCoordinates, Vector2D coordinates, double bearing) {
+    private void targetGun(PositionalRobotCache cache, Vector2D vecToEnemy, Vector2D enemyCoordinates, Vector2D coordinates, double bearing) {
         double velocity = cache.getVelocity();
 
         double turnGun = bearing - getGunHeading();
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
 
-        this.toTarget = evaluateTargetPoint(null, enemyCoordinates, coordinates, bearing, -velocity, 1);
-        double correctionGun = Utils.normalRelativeAngle(toTarget.angleFrom(distance));
+        this.attackVector = evaluateAttackVector(enemyCoordinates, coordinates, cache.getHeading(), velocity, 1);
+        double correctionGun = Utils.normalRelativeAngle(attackVector.angleFrom(vecToEnemy));
 
         setTurnGunRight(toTurnGun + correctionGun);
     }
 
-    private Vector2D evaluateTargetPoint(Graphics2D g, Vector2D enemyCoordinates, Vector2D coordinates, double direction, double velocity, int turns) {
-        if (velocity == 0) return enemyCoordinates;
-        Vector2D movement = Vector2D.fromPolarCoordinates(direction, velocity);
+    private Vector2D evaluateAttackVector(Vector2D enemyCoordinates, Vector2D coordinates, double enemyHeading, double enemyVelocity, int turns) {
+        if (enemyVelocity == 0) return enemyCoordinates.subtract(coordinates);
+        Vector2D movement = Vector2D.fromPolarCoordinates(enemyHeading, enemyVelocity);
         Vector2D target = enemyCoordinates.add(movement);
-        if (g != null) {
-            g.drawLine((int) Math.round(enemyCoordinates.getX()), (int) Math.round(enemyCoordinates.getY()), (int) Math.round(target.getX()), (int) Math.round(target.getY()));
-        }
-        Vector2D toTarget = coordinates.subtract(target);
+        Vector2D attackVector = target.subtract(coordinates);
 
-        double targetDis = toTarget.length();
+        double targetDis = attackVector.length();
         double speed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, targetDis));
 
-        Vector2D bulletMovement = toTarget.normalize().multiply(turns * speed);
-        if (bulletMovement.length() >= targetDis || turns > 10) return toTarget;
-        return evaluateTargetPoint(g, target, coordinates, direction, velocity, turns + 1);
+        Vector2D bulletMovement = attackVector.normalize().multiply(turns * speed);
+        if (bulletMovement.length() >= targetDis || turns > 9) return attackVector;
+        return evaluateAttackVector(target, coordinates, enemyHeading, enemyVelocity, turns + 1);
     }
 
     /**
