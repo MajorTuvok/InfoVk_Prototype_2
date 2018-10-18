@@ -11,7 +11,7 @@ package infovk.prototype_2.helper;
  * @author Tobias Zimmermann (original)
  * @author Billy Joe Franks (adaptation)
  */
-public final class Point {
+public final class Vector2D {
 
     /**
      * The x coordinate of the vector. Guaranteed to be finite.
@@ -29,7 +29,7 @@ public final class Point {
      * @param x The x coordinate of the newly constructed vector.
      * @param y The y coordinate of the newly constructed vector.
      */
-    public Point(double x, double y) {
+    public Vector2D(double x, double y) {
         if (!Double.isFinite(x)) {
             throw new IllegalArgumentException("The x-coordinate of vector must be a finite number.");
         }
@@ -49,8 +49,8 @@ public final class Point {
      * @param length The length of the new vector.
      * @return The position vector for the given polar coordinates.
      */
-    public static Point fromPolarCoordinates(double phi, double length) {
-        return new Point(Math.sin(Math.toRadians(phi)) * length, Math.cos(Math.toRadians(phi)) * length);
+    public static Vector2D fromPolarCoordinates(double phi, double length) {
+        return new Vector2D(Math.sin(Math.toRadians(phi)) * length, Math.cos(Math.toRadians(phi)) * length);
     }
 
     /**
@@ -78,7 +78,7 @@ public final class Point {
      * @param y The finite value to add to the y-coordinate,
      * @return The sum vector.
      */
-    public Point add(double x, double y) {
+    public Vector2D add(double x, double y) {
         if (!Double.isFinite(x)) {
             throw new IllegalArgumentException("The x-coordinate of vector must be a finite number.");
         }
@@ -87,7 +87,7 @@ public final class Point {
             throw new IllegalArgumentException("The y-coordinate of vector must be a finite number.");
         }
 
-        return new Point(this.x + x, this.y + y);
+        return new Vector2D(this.x + x, this.y + y);
     }
 
     /**
@@ -96,8 +96,8 @@ public final class Point {
      * @param other The vector to add to this one.
      * @return The sum vector.
      */
-    public Point add(Point other) {
-        return new Point(this.x + other.x, this.y + other.y);
+    public Vector2D add(Vector2D other) {
+        return new Vector2D(this.x + other.x, this.y + other.y);
     }
 
     /**
@@ -107,7 +107,7 @@ public final class Point {
      * @param y The finite value to subtract from the y-coordinate
      * @return The difference vector.
      */
-    public Point subtract(double x, double y) {
+    public Vector2D subtract(double x, double y) {
         if (!Double.isFinite(x)) {
             throw new IllegalArgumentException("The x-coordinate of vector must be a finite number.");
         }
@@ -116,7 +116,7 @@ public final class Point {
             throw new IllegalArgumentException("The y-coordinate of vector must be a finite number.");
         }
 
-        return new Point(this.x - x, this.y - y);
+        return new Vector2D(this.x - x, this.y - y);
     }
 
     /**
@@ -125,8 +125,8 @@ public final class Point {
      * @param other The vector to subtract from this one.
      * @return The difference vector.
      */
-    public Point subtract(Point other) {
-        return new Point(this.x - other.x, this.y - other.y);
+    public Vector2D subtract(Vector2D other) {
+        return new Vector2D(this.x - other.x, this.y - other.y);
     }
 
     /**
@@ -135,8 +135,8 @@ public final class Point {
      * @param scalar The finite scalar by which to multiply.
      * @return The result vector.
      */
-    public Point multiply(double scalar) {
-        return new Point(x * scalar, y * scalar);
+    public Vector2D multiply(double scalar) {
+        return new Vector2D(x * scalar, y * scalar);
     }
 
     /**
@@ -166,7 +166,7 @@ public final class Point {
      *
      * @return The normalized vector.
      */
-    public Point normalize() {
+    public Vector2D normalize() {
         double len = length();
         if (len == 0) {
             throw new IllegalStateException("Cannot normalize a null vector.");
@@ -181,7 +181,7 @@ public final class Point {
      * @param desiredLength The length the vector should have.
      * @return The vector with the desired length.
      */
-    public Point withLength(double desiredLength) {
+    public Vector2D withLength(double desiredLength) {
         double len = length();
         if (len == 0) {
             if (desiredLength == 0) {
@@ -227,7 +227,7 @@ public final class Point {
      * @param other The vector to which to measure the angle to.
      * @return The angle between the vectors in degrees.
      */
-    public double angleFrom(Point other) {
+    public double angleFrom(Vector2D other) {
         if (other == null) {
             return Double.NaN;
         }
@@ -241,7 +241,7 @@ public final class Point {
      * @param other The other vector in the dot product.
      * @return The dot product in double precision.
      */
-    public double dotProduct(Point other) {
+    public double dotProduct(Vector2D other) {
         return x * other.x + y * other.y;
     }
 
@@ -251,7 +251,7 @@ public final class Point {
      * @param other The vector to check this vector against.
      * @return {@code true} if this vector and the given vector point in the same or opposite directions.
      */
-    public boolean isSameDirectionAs(Point other) {
+    public boolean isSameDirectionAs(Vector2D other) {
         if (other == null) {
             return false;
         }
@@ -272,7 +272,7 @@ public final class Point {
      * @param other The vector to check this vector against.
      * @return {@code true} if this vector and the given vector have the same direction and heading.
      */
-    public boolean isSameDirectionAndHeadingAs(Point other) {
+    public boolean isSameDirectionAndHeadingAs(Vector2D other) {
         if (other == null) {
             return false;
         }
@@ -293,7 +293,7 @@ public final class Point {
      * @param other the vector to calculate the distance to
      * @return the distance between this vector and the given one
      */
-    public double distance(Point other) {
+    public double distance(Vector2D other) {
         double xDiff = x - other.x;
         double yDiff = y - other.y;
         return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
@@ -309,7 +309,7 @@ public final class Point {
      * @param other the vector to calculate the distance to
      * @return the square of the distance between this vector and the given one
      */
-    public double distanceSq(Point other) {
+    public double distanceSq(Vector2D other) {
         double xDiff = x - other.x;
         double yDiff = y - other.y;
         return xDiff * xDiff + yDiff * yDiff;
@@ -328,11 +328,11 @@ public final class Point {
      */
     @Override
     public boolean equals(Object other) {
-        if (other == null || !(other instanceof Point)) {
+        if (other == null || !(other instanceof Vector2D)) {
             return false;
         }
 
-        Point vec = (Point) other;
+        Vector2D vec = (Vector2D) other;
         return Double.compare(x, vec.x) == 0 && Double.compare(y, vec.y) == 0;
     }
 

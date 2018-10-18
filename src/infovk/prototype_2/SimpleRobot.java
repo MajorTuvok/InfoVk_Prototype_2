@@ -1,6 +1,6 @@
 package infovk.prototype_2;
 
-import infovk.prototype_2.helper.Point;
+import infovk.prototype_2.helper.Vector2D;
 import robocode.AdvancedRobot;
 
 import java.awt.*;
@@ -780,15 +780,15 @@ abstract class SimpleRobotBehavior<T extends SimpleRobot> {
     }
 
     /**
-     * Returns the position of the robot as a Point. (0,0) is at the bottom left of the
+     * Returns the position of the robot as a Vector2D. (0,0) is at the bottom left of the
      * battlefield.
      *
-     * @return the position of the robot as a Point.
+     * @return the position of the robot as a Vector2D.
      * @see #getX()
      * @see #getY()
      */
-    final infovk.prototype_2.helper.Point getPoint() {
-        return new Point(this.getX(), this.getY());
+    final Vector2D getPoint() {
+        return new Vector2D(this.getX(), this.getY());
     }
 
     /**

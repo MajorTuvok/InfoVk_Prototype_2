@@ -3,13 +3,12 @@ package infovk.prototype_2;
 import infovk.prototype_2.helper.*;
 import infovk.prototype_2.helper.BulletCache.PositionalBulletCache;
 import infovk.prototype_2.helper.BulletCache.TargetedBulletCache;
-import infovk.prototype_2.helper.Point;
 import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
+import robocode.*;
 import robocode.Bullet;
 import robocode.BulletHitBulletEvent;
 import robocode.BulletHitEvent;
 import robocode.BulletMissedEvent;
-import robocode.*;
 import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
@@ -22,7 +21,7 @@ import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.util.*;
 
-public abstract class RobotBase extends SimpleRobot implements Constants {
+public abstract class RobotBase extends AdvancedRobot implements Constants {
     private static final String BULLET_HISTORY = "bullets.stats";
     private static final double ANGLE_FACTOR = 0.5;
     private static final int MAX_TURN_ANGLE = 90;
@@ -31,6 +30,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
     private BulletManager mBulletManager;
     private RobotHistory mRobotHistory;
     private ColorHandler mColorHandler;
+    private BaseRobotBehaviour<?> behavior = null;
 
     public RobotBase() {
         setEnergyPowerFactor(40);
@@ -92,19 +92,20 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
     public void run() {
 
         setAdjustToTurns();
+        start();
+        behavior = getBehaviourType().createBehaviour(this);
         if (behavior != null) {
             behavior.start();
         }
-        start();
         getColorHandler().rainbow();
         execute();
 
         while (true) {
 
-            if (behavior != null) {
-                behavior.execute();
-            }
             loop();
+            if (behavior != null) {
+                behavior.loop();
+            }
             getColorHandler().rainbow();
             execute();
         }
@@ -120,32 +121,35 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
     @Override
     public void onBulletHit(BulletHitEvent ex) {
         mBulletManager.onBulletHit(ex);
+        if (behavior != null) behavior.onBulletHit(ex);
     }
 
     @Override
     public void onBulletHitBullet(BulletHitBulletEvent ex) {
         mBulletManager.onBulletHitBullet(ex);
+        if (behavior != null) behavior.onBulletHitBullet(ex);
     }
 
     @Override
     public void onBulletMissed(BulletMissedEvent ex) {
         mBulletManager.onBulletMissed(ex);
+        if (behavior != null) behavior.onBulletMissed(ex);
         getColorHandler().rainbow();
     }
 
     @Override
     public void onHitByBullet(HitByBulletEvent ex) {
-
+        if (behavior != null) behavior.onHitByBullet(ex);
     }
 
     @Override
     public void onHitRobot(HitRobotEvent ex) {
-
+        if (behavior != null) behavior.onHitRobot(ex);
     }
 
     @Override
     public void onHitWall(HitWallEvent ex) {
-
+        if (behavior != null) behavior.onHitWall(ex);
     }
 
     protected void loop() {
@@ -153,21 +157,24 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
     }
 
     @Override
-    public void onRoundEnded(RoundEndedEvent event) {
-        super.onRoundEnded(event);
-        writeBulletHistory();
+    public void onRobotDeath(RobotDeathEvent event) {
+        super.onRobotDeath(event);
+        //BulletSerializer.serializeBullets(System.out, mBulletManager.getView(), event.getName());
+        if (behavior != null) behavior.onRobotDeath(event);
     }
 
     @Override
     public void onScannedRobot(ScannedRobotEvent ex) {
         mRobotHistory.updateCache(ex, this);
+        if (behavior != null) behavior.onScannedRobot(ex);
         getColorHandler().rainbow();
     }
 
     @Override
-    public void onRobotDeath(RobotDeathEvent event) {
-        super.onRobotDeath(event);
-        BulletSerializer.serializeBullets(System.out, mBulletManager.getView(), event.getName());
+    public void onRoundEnded(RoundEndedEvent event) {
+        super.onRoundEnded(event);
+        writeBulletHistory();
+        if (behavior != null) behavior.onRoundEnded(event);
     }
 
     protected PositionalRobotCache getRecentCache(String target) {
@@ -178,18 +185,11 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         return mRobotHistory.getCache(target, index);
     }
 
-
-    protected double getEstimatedVelocity(String target) {
-        Set<PositionalRobotCache> caches = mRobotHistory.getCompleteCacheForTarget(target);
-        double fac = 1;
-        int count = caches.size() - 1;
-        double velocity = 0;
-        for (PositionalRobotCache cache : caches) {
-            if (count >= 1) fac /= 2;
-            velocity += fac * count * cache.getVelocity();
-            count--;
-        }
-        return velocity;
+    @Override
+    public void onDeath(DeathEvent event) {
+        super.onDeath(event);
+        BulletSerializer.serializeBullets(System.out, mBulletManager);
+        if (behavior != null) behavior.onDeath(event);
     }
 
     protected void fireRelativeToEnergy(RobotInfo target, double baseVal) {
@@ -212,8 +212,21 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         return super.setFireBullet(power);
     }
 
+    protected double getEstimatedVelocity(String target) {
+        /*Set<PositionalRobotCache> caches = mRobotHistory.getCompleteCacheForTarget(target);
+        double fac = 1;
+        int count = caches.size() - 1;
+        double velocity = 0;
+        for (PositionalRobotCache cache : caches) {
+            if (count >= 1) fac /= 2;
+            velocity += fac * count * cache.getVelocity();
+            count--;
+        }*/
+        return getRecentCache(target).getTargetInfo().getVelocity();
+    }
+
     protected double getEstimatedHeading(String target) {
-        PositionalRobotCache cur = getRecentCache(target);
+        /*PositionalRobotCache cur = getRecentCache(target);
         PositionalRobotCache last = getCache(target, 1);
         if (cur == null) {
             return 0;
@@ -221,19 +234,14 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         if (last == null) {
             return cur.getHeading();
         }
-        Point moved = cur.getTargetInfo().getPos().subtract(last.getTargetInfo().getPos());
-        Point dir = Point.fromPolarCoordinates(cur.getHeading(), 1);
+        Vector2D moved = cur.getTargetInfo().getPos().subtract(last.getTargetInfo().getPos());
+        Vector2D dir = Vector2D.fromPolarCoordinates(cur.getHeading(), 1);
         double angle = Utils.normalRelativeAngle(moved.angleFrom(dir));
         if (angle > MAX_TURN_ANGLE || angle < -MAX_TURN_ANGLE) {
             return cur.getHeading();
         }
-        return cur.getHeading() + angle * ANGLE_FACTOR;
-    }
-
-    @Override
-    public void onDeath(DeathEvent event) {
-        super.onDeath(event);
-        BulletSerializer.serializeBullets(System.out, mBulletManager);
+        return cur.getHeading() + angle * ANGLE_FACTOR;*/
+        return getRecentCache(target).getHeading();
     }
 
     protected void start() {
@@ -417,11 +425,15 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         }
     }
 
-    private final class ColorHandler {
+    public final class ColorHandler {
         private int i; //int für farbschleife
 
-        public ColorHandler() {
+        private ColorHandler() {
             this.i = 0;
+        }
+
+        public Color getColor(double valR, double valG, double valB) {
+            return new Color(colorFunction((valR)), colorFunction(valG), colorFunction(valB));
         }
 
         //Setting Color from own Bot
@@ -429,7 +441,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
 
             RobotBase.this.setColors(
                     Color.BLACK,
-                    new Color(colorFunction((int) (RobotBase.this.getGunHeat() * 75)), colorFunction(120 - (int) (RobotBase.this.getGunHeat() * 75)), 0),
+                    getColor(RobotBase.this.getGunHeat() * 75, 120 - RobotBase.this.getGunHeat() * 75, -1),
                     Color.BLACK,
                     Color.WHITE,
                     Color.BLUE);
@@ -441,8 +453,9 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         }
 
         //Working through ColorSpectrum
-        private int colorFunction(int x) {
-            double a = (double) x;
+        private int colorFunction(double x) {
+            if (x < 0) return 0;
+            double a = x;
             double b = 0;
 
             while (a >= 360) {

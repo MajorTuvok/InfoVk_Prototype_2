@@ -4,15 +4,15 @@ import robocode.Robot;
 
 public final class RobotInfo {
     private final double mHeading;
-    private final Point mPos;
+    private final Vector2D mPos;
     private final double mVelocity;
     private final String mName;
 
     private RobotInfo(String name, double x, double y, double heading, double velocity) {
-        this(new Point(x, y), name, heading, velocity);
+        this(new Vector2D(x, y), name, heading, velocity);
     }
 
-    private RobotInfo(Point pos, String name, double heading, double velocity) {
+    private RobotInfo(Vector2D pos, String name, double heading, double velocity) {
         mPos = pos;
         mHeading = heading;
         mVelocity = velocity;
@@ -23,7 +23,7 @@ public final class RobotInfo {
         return new RobotInfo(robot.getName(), robot.getX(), robot.getY(), robot.getHeading(), robot.getVelocity());
     }
 
-    public static RobotInfo getInstance(Point pos, String name, double heading, double velocity) {
+    public static RobotInfo getInstance(Vector2D pos, String name, double heading, double velocity) {
         return new RobotInfo(pos, name, heading, velocity);
     }
 
@@ -43,7 +43,7 @@ public final class RobotInfo {
         return mPos.getY();
     }
 
-    public Point getPos() {
+    public Vector2D getPos() {
         return mPos;
     }
 

@@ -1,14 +1,16 @@
 package infovk.prototype_2;
 
 
-import infovk.prototype_2.helper.Point;
 import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
 import infovk.prototype_2.helper.RobotHelper;
+import infovk.prototype_2.helper.Vector2D;
 import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
+import robocode.*;
 import robocode.ScannedRobotEvent;
 
+import java.awt.*;
 import java.util.Map;
 
 public class Prototype_Best extends RobotBase {
@@ -21,6 +23,7 @@ public class Prototype_Best extends RobotBase {
     private long time;
     private boolean positiveMovement;
 
+    private String lastTarget = "";
     @Override
     protected BehaviourType getBehaviourType() {
         return BehaviourType.DEFAULT;
@@ -70,27 +73,53 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onScannedRobot(ScannedRobotEvent event) {
         super.onScannedRobot(event);
-
+        lastTarget = event.getName();
         PositionalRobotCache cache = getRecentCache(event.getName());
-        Point coordinates = cache.getScannerInfo().getPos();
-        Point enemyCoordinates = cache.getTargetInfo().getPos();
-        Point distance = new Point(enemyCoordinates.getX() - coordinates.getX(), enemyCoordinates.getY() - coordinates.getY());
+        Vector2D coordinates = cache.getScannerInfo().getPos();
+        Vector2D enemyCoordinates = cache.getTargetInfo().getPos();
+        Vector2D vecToEnemy = enemyCoordinates.subtract(coordinates);
 
-
-        double bearing = event.getBearing();
-        double absoluteBearing = getHeading() + event.getBearing();
+        double absoluteBearing = RobotHelper.absoluteBearing(this, event.getBearing());
         double turnRadar = absoluteBearing - getRadarHeading();
-        double distanceToEnemy = event.getDistance();
 
         setRadar(turnRadar);
-        targetGun(cache, distance, enemyCoordinates, coordinates, absoluteBearing, distanceToEnemy);
-        fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, distanceToEnemy);
+        targetGun(cache, vecToEnemy, enemyCoordinates, coordinates, absoluteBearing);
+        fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, vecToEnemy.length());
 
         PositionalRobotCache lastValue = getCache(event.getName(), 1);
         double enemyEnergy = event.getEnergy();
         //System.out.println("lastValue=" + lastValue);
-        dodgeBullet(lastValue, enemyEnergy, bearing);
+        dodgeBullet(lastValue, enemyEnergy, absoluteBearing);
         scan();
+    }
+
+    @Override
+    public void onPaint(Graphics2D g) {
+        super.onPaint(g);
+        if (lastTarget != null) {
+            System.out.println("Fetching Paint Cache for " + lastTarget);
+            PositionalRobotCache cache = getRecentCache(lastTarget);
+            if (cache != null) {
+                g.setColor(Color.RED);
+                Vector2D p = evaluateTargetPoint(g, cache.getTargetInfo().getPos(), cache.getScannerInfo().getPos(), getEstimatedHeading(lastTarget), getEstimatedVelocity(lastTarget), 1);
+                g.drawRect((int) p.getX() - 5, (int) p.getY() - 5, 10, 10);
+            }
+        }
+    }
+
+    /**
+     * Redirecting and correcting Gun toward Enemy, still uncorrect
+     */
+    private void targetGun(PositionalRobotCache cache, Vector2D distance, Vector2D enemyCoordinates, Vector2D coordinates, double bearing) {
+        double velocity = cache.getVelocity();
+
+        double turnGun = bearing - getGunHeading();
+        double toTurnGun = Utils.normalRelativeAngle(turnGun);
+
+        Vector2D toTarget = evaluateTargetPoint(null, enemyCoordinates, coordinates, bearing, -velocity, 1);
+        double correctionGun = Utils.normalRelativeAngle(toTarget.angleFrom(distance));
+
+        setTurnGunRight(toTurnGun + correctionGun);
     }
 
     /**
@@ -146,23 +175,6 @@ public class Prototype_Best extends RobotBase {
     }
 
     /**
-     * Redirecting and correcting Gun toward Enemy, still incorrect
-     */
-    private void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
-        double direction = getEstimatedHeading(cache.getName());
-
-        double turnGun = bearing - getGunHeading();
-        double toTurnGun = Utils.normalRelativeAngle(turnGun);
-
-        Point movement = Point.fromPolarCoordinates(direction, getEstimatedVelocity(cache.getName()));
-        Point target = enemyCoordinates.add(movement).add(movement);
-        Point toTarget = new Point(target.getX() - coordinates.getX(), target.getY() - coordinates.getY());
-        double correctionGun = Utils.normalRelativeAngle(toTarget.angle() - distance.angle());
-
-        setTurnGunRight(toTurnGun + correctionGun);
-    }
-
-    /**
      * Change Position after Hit by Enemy
      */
     @Override
@@ -214,6 +226,23 @@ public class Prototype_Best extends RobotBase {
         }
         dodgeWall(distance);
         //System.out.println("distance=" + distance);
+    }
+
+    private Vector2D evaluateTargetPoint(Graphics2D g, Vector2D enemyCoordinates, Vector2D coordinates, double direction, double velocity, int turns) {
+        if (velocity == 0) return enemyCoordinates;
+        Vector2D movement = Vector2D.fromPolarCoordinates(direction, velocity);
+        Vector2D target = enemyCoordinates.add(movement);
+        if (g != null) {
+            g.drawLine((int) Math.round(enemyCoordinates.getX()), (int) Math.round(enemyCoordinates.getY()), (int) Math.round(target.getX()), (int) Math.round(target.getY()));
+        }
+        Vector2D toTarget = coordinates.subtract(target);
+
+        double targetDis = toTarget.length();
+        double speed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, targetDis));
+
+        Vector2D bulletMovement = toTarget.normalize().multiply(turns * speed);
+        if (bulletMovement.length() >= targetDis || turns > 10) return toTarget;
+        return evaluateTargetPoint(g, target, coordinates, direction, velocity, turns + 1);
     }
 
     /**
