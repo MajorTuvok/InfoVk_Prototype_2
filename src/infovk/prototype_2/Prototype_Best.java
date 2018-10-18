@@ -1,3 +1,4 @@
+
 package infovk.prototype_2;
 
 
@@ -22,6 +23,7 @@ public class Prototype_Best extends RobotBase {
     private double upperBorder = Double.MAX_VALUE;
     private long time;
     private boolean positiveMovement;
+    private Vector2D toTarget;
 
     private String lastTarget = "";
     @Override
@@ -96,15 +98,21 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onPaint(Graphics2D g) {
         super.onPaint(g);
-        if (lastTarget != null) {
-            System.out.println("Fetching Paint Cache for " + lastTarget);
-            PositionalRobotCache cache = getRecentCache(lastTarget);
-            if (cache != null) {
-                g.setColor(Color.RED);
-                Vector2D p = evaluateTargetPoint(g, cache.getTargetInfo().getPos(), cache.getScannerInfo().getPos(), getEstimatedHeading(lastTarget), getEstimatedVelocity(lastTarget), 1);
-                g.drawRect((int) p.getX() - 5, (int) p.getY() - 5, 10, 10);
-            }
+        if (toTarget != null) {
+        	g.setColor(Color.RED);
+    		g.drawLine((int)this.getX(),(int)this.getY(),(int) (toTarget.getX()+ this.getX() -this.getWidth()/2 + 36*Math.random()),(int)(toTarget.getY()+this.getY()-this.getWidth()/2 + 36*Math.random()));
+    		g.drawRect((int)(toTarget.getX()+ this.getX() -this.getWidth()/2), (int)(toTarget.getY()+this.getY()-this.getWidth()/2), (int)this.getWidth(), (int)this.getHeight());
         }
+        g.setColor(Color.gray);
+		g.fillRect((int)(this.getX()-this.getWidth()/2+3), (int)(this.getY()-this.getWidth()/2-7), 30, 50);
+		g.fillRect((int)(this.getX()-this.getWidth()/2-7), (int)(this.getY()-this.getWidth()/2+3), 50, 30);
+		g.fillRect((int)(this.getX()-this.getWidth()/2-4), (int)(this.getY()-this.getWidth()/2-4), 44, 44);
+		g.setColor(Color.green);
+		g.fillRect((int)(this.getX()-this.getWidth()/2+10), (int)(this.getY()-this.getWidth()/2+6), 16, 24);
+		g.fillRect((int)(this.getX()-this.getWidth()/2+6), (int)(this.getY()-this.getWidth()/2+10), 24, 16);
+		g.fillRect((int)(this.getX()-this.getWidth()/2+8), (int)(this.getY()-this.getWidth()/2+8), 20, 20);
+		g.setColor(Color.white);
+		g.fillRect((int)(this.getX()+2), (int)(this.getY()+2), 6, 6);
     }
 
     /**
@@ -116,7 +124,7 @@ public class Prototype_Best extends RobotBase {
         double turnGun = bearing - getGunHeading();
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
 
-        Vector2D toTarget = evaluateTargetPoint(null, enemyCoordinates, coordinates, bearing, -velocity, 1);
+        this.toTarget = evaluateTargetPoint(null, enemyCoordinates, coordinates, bearing, -velocity, 1);
         double correctionGun = Utils.normalRelativeAngle(toTarget.angleFrom(distance));
 
         setTurnGunRight(toTurnGun + correctionGun);
