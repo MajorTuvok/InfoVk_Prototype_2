@@ -27,6 +27,10 @@ public class RobotHelper {
     public static final double getRelativeEnergyAndDistancePower(double baseVal, double energy, double energyPowerFactor, double distance, double distanceFactor) {
         return getRelativeEnergyPower(baseVal - (int) (distance / distanceFactor), energy, energyPowerFactor);
     }
+
+    public static final double clamp(double in, double min, double max) {
+        return Math.min(Math.max(in, min), max);
+    }
     /*
     public static final ScannedRobotEvent scannedRobot(Robot scanned, Robot scanner) {
         return new ScannedRobotEvent(scanned.getName(),scanned.getEnergy(),0,0,scanned.getHeading(),scanned.getVelocity(),false);

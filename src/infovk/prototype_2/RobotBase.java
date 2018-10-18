@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.List;
 
 public abstract class RobotBase extends AdvancedRobot implements Constants {
     private static final String BULLET_HISTORY = "bullets.stats";
@@ -212,36 +213,30 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
         return super.setFireBullet(power);
     }
 
-    protected double getEstimatedVelocity(String target) {
-        /*Set<PositionalRobotCache> caches = mRobotHistory.getCompleteCacheForTarget(target);
-        double fac = 1;
-        int count = caches.size() - 1;
-        double velocity = 0;
-        for (PositionalRobotCache cache : caches) {
-            if (count >= 1) fac /= 2;
-            velocity += fac * count * cache.getVelocity();
-            count--;
-        }*/
-        return getRecentCache(target).getTargetInfo().getVelocity();
+    protected double getEstimatedAcceleration(PositionalRobotCache target) {
+        Collection<PositionalRobotCache> caches = mRobotHistory.getCompleteCacheForTarget(target.getName());
+        if (caches.size() < 2) return 0;
+        PositionalRobotCache prevPos = getCache(target.getName(), 1);
+        double diff = target.getVelocity() - prevPos.getVelocity();
+        long timeDiff = target.getTime() - prevPos.getTime();
+        return diff - timeDiff;
     }
 
-    protected double getEstimatedHeading(String target) {
-        /*PositionalRobotCache cur = getRecentCache(target);
-        PositionalRobotCache last = getCache(target, 1);
-        if (cur == null) {
-            return 0;
+    protected double getEstimatedRotation(PositionalRobotCache target) {
+        List<PositionalRobotCache> caches = new ArrayList<>(mRobotHistory.getCompleteCacheForTarget(target.getName()));
+        if (caches.size() < 2) return 0;
+        double fac = 1;
+        double rotation = 0;
+        for (int i = 0; i + 1 < caches.size(); ++i) {
+            if (caches.size() - i > 2) fac /= 2;
+            double diff = caches.get(i).getHeading() - caches.get(i + 1).getHeading();
+            diff = diff < 0 ? diff + 360 : diff; //always positive angle...
+            long timeDiff = caches.get(i).getTime() - caches.get(i + 1).getTime(); //remember the time
+            rotation += fac * (diff / timeDiff);
         }
-        if (last == null) {
-            return cur.getHeading();
-        }
-        Vector2D moved = cur.getTargetInfo().getPos().subtract(last.getTargetInfo().getPos());
-        Vector2D dir = Vector2D.fromPolarCoordinates(cur.getHeading(), 1);
-        double angle = Utils.normalRelativeAngle(moved.angleFrom(dir));
-        if (angle > MAX_TURN_ANGLE || angle < -MAX_TURN_ANGLE) {
-            return cur.getHeading();
-        }
-        return cur.getHeading() + angle * ANGLE_FACTOR;*/
-        return getRecentCache(target).getHeading();
+        //It can rotate the other way too...
+        if (target.getHeading() - caches.get(1).getHeading() < 0) return -rotation;
+        return rotation;
     }
 
     protected void start() {

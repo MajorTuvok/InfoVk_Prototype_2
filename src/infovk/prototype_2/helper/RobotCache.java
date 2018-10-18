@@ -6,7 +6,8 @@ import robocode.ScannedRobotEvent;
 import java.util.Comparator;
 
 public class RobotCache implements Comparable<RobotCache> {
-    public static Comparator<RobotCache> TIME_COMPARATOR = Comparator.comparingLong(RobotCache::getTime);
+
+    public static Comparator<RobotCache> TIME_COMPARATOR = Comparator.comparingLong(RobotCache::getTime).reversed();
     private final ScannedRobotEvent mEvent;
 
     private RobotCache(ScannedRobotEvent event) {

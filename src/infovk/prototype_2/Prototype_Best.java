@@ -24,6 +24,7 @@ public class Prototype_Best extends RobotBase {
     private long time;
     private boolean positiveMovement;
     private Vector2D attackVector = null;
+    private String target = null;
     @Override
     protected BehaviourType getBehaviourType() {
         return BehaviourType.DEFAULT;
@@ -43,16 +44,18 @@ public class Prototype_Best extends RobotBase {
     }
 
     /**
-     * Setting Loop
+     * Setting Radar on Enemy
      */
-    @Override
-    protected void loop() {
-        super.loop();
-        double move = randomFixedRange(-150, 150, -41, 41);
-        setAhead(move);
-        setTurnRadarRight(360);
+    private void setRadar(double heading) {
+        double toTurnRadar = Utils.normalRelativeAngle(heading);
+        if (toTurnRadar < 0) {
+            toTurnRadar = toTurnRadar + randomFixedRange(1, 4, 2.5, 2.5);
+        } else {
+            toTurnRadar = toTurnRadar - randomFixedRange(1, 4, 2.5, 2.5);
+        }
 
-        //rainbow();
+        setTurnRadarRight(toTurnRadar);
+
     }
 
     /**
@@ -86,6 +89,16 @@ public class Prototype_Best extends RobotBase {
         g.fillRect((int) (this.getX() + 2), (int) (this.getY() + 2), 6, 6);
     }
 
+    /**
+     * Setting Loop
+     */
+    @Override
+    protected void loop() {
+        super.loop();
+        setAhead(randomFixedRange(-150, 150, -41, 41));
+        setTurnRadarRight(360);
+        //rainbow();
+    }
 
     /**
      * Searching Enemy, pointing Radar, firing Cannon, trying to dodge
@@ -93,52 +106,83 @@ public class Prototype_Best extends RobotBase {
     @Override
     public void onScannedRobot(ScannedRobotEvent event) {
         super.onScannedRobot(event);
-        PositionalRobotCache cache = getRecentCache(event.getName());
+        target = event.getName();
+        if (target == null) return;
+        performFire();
+
+        PositionalRobotCache cache = getRecentCache(target);
+        double absoluteBearing = RobotHelper.absoluteBearing(this, cache.getBearing());
+        PositionalRobotCache lastValue = getCache(target, 1);
+        //System.out.println("lastValue=" + lastValue);
+        double turnRadar = RobotHelper.absoluteBearing(this, event.getBearing()) - getRadarHeading();
+        setRadar(turnRadar);
+        dodgeBullet(lastValue, cache.getEnergy(), absoluteBearing);
+        scan();
+    }
+
+    private void performFire() {
+        PositionalRobotCache cache = getRecentCache(target);
         Vector2D coordinates = cache.getScannerInfo().getPos();
         Vector2D enemyCoordinates = cache.getTargetInfo().getPos();
         Vector2D vecToEnemy = enemyCoordinates.subtract(coordinates);
 
-        double absoluteBearing = RobotHelper.absoluteBearing(this, event.getBearing());
-        double turnRadar = absoluteBearing - getRadarHeading();
-
-        setRadar(turnRadar);
-        targetGun(cache, vecToEnemy, enemyCoordinates, coordinates, absoluteBearing);
-        fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, vecToEnemy.length());
-
-        PositionalRobotCache lastValue = getCache(event.getName(), 1);
-        double enemyEnergy = event.getEnergy();
-        //System.out.println("lastValue=" + lastValue);
-        dodgeBullet(lastValue, enemyEnergy, absoluteBearing);
-        scan();
+        evaluateAttackVector(cache, vecToEnemy);
+        targetGun();
+        fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, attackVector.length());
     }
 
-    /**
-     * Redirecting and correcting Gun toward Enemy, still uncorrect
-     */
-    private void targetGun(PositionalRobotCache cache, Vector2D vecToEnemy, Vector2D enemyCoordinates, Vector2D coordinates, double bearing) {
+    private void evaluateAttackVector(PositionalRobotCache cache, Vector2D vecToEnemy) {
         double velocity = cache.getVelocity();
+        double rotation = getEstimatedRotation(cache);
+        double startHeading = cache.getHeading();
 
-        double turnGun = bearing - getGunHeading();
-        double toTurnGun = Utils.normalRelativeAngle(turnGun);
+        attackVector = vecToEnemy;
+        double distance = attackVector.length();
+        double bulletSpeed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, distance));
+        long newMovedTurns = Math.round(distance / bulletSpeed);
 
-        this.attackVector = evaluateAttackVector(enemyCoordinates, coordinates, cache.getHeading(), velocity, 1);
-        double correctionGun = Utils.normalRelativeAngle(attackVector.angleFrom(vecToEnemy));
-
-        setTurnGunRight(toTurnGun + correctionGun);
+        defineAttackVectorMorePrecisely(vecToEnemy, newMovedTurns, velocity, rotation, startHeading);
     }
 
-    private Vector2D evaluateAttackVector(Vector2D enemyCoordinates, Vector2D coordinates, double enemyHeading, double enemyVelocity, int turns) {
-        if (enemyVelocity == 0) return enemyCoordinates.subtract(coordinates);
-        Vector2D movement = Vector2D.fromPolarCoordinates(enemyHeading, enemyVelocity);
-        Vector2D target = enemyCoordinates.add(movement);
-        Vector2D attackVector = target.subtract(coordinates);
+    private void defineAttackVectorMorePrecisely(Vector2D vecToEnemy, long newMovedTurns, double velocity, double rotation, double startHeading) {
+        int iterationCounter = 0;
+        long enemyMovedTurns;
+        double distance;
+        double bulletSpeed;
+        do {
+            enemyMovedTurns = newMovedTurns;
+            attackVector = getFastEnemyPredictedPosition(vecToEnemy, startHeading, velocity, rotation, enemyMovedTurns);
+            distance = attackVector.length();
+            bulletSpeed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, distance));
+            newMovedTurns = (long) Math.ceil(distance / bulletSpeed);
+            ++iterationCounter;
+        }
+        while (newMovedTurns - enemyMovedTurns > 2); //if we are correcting less then 5 turns, it should be good
+        System.out.println("Evaluated Targeting with " + iterationCounter + " iterations");
+    }
 
-        double targetDis = attackVector.length();
-        double speed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, targetDis));
-
-        Vector2D bulletMovement = attackVector.normalize().multiply(turns * speed);
-        if (bulletMovement.length() >= targetDis || turns > 9) return attackVector;
-        return evaluateAttackVector(target, coordinates, enemyHeading, enemyVelocity, turns + 1);
+    /*
+      Our original Method of Predicting the enemies position was too slow (manually retracing every of our enemies future steps), so we tried doing some Math and here it is,
+      the ultimate fast Enemy position Prediction. How do you get it (x-Coord):
+         enemyMovedVec = enemyVec + sum[0; turns](velocity*sin(enemyHeading+rotation*i))
+      The sum now collects all values of velocity*sin(enemyHeading+rotation*i) until turns. Because turns are the smallest possible units, this is essentially an Integral.
+      <=>enemyMovedVec = enemyVec + integral(velocity*sin(enemyHeading+rotation)
+      And Bronstein then tells us the integral shown below in the Mehtod
+      !!!!!:
+      Notice however, that acceleration no longer is taken into account, but because we are estimating
+     */
+    private Vector2D getFastEnemyPredictedPosition(Vector2D vecToEnemy, double enemyHeading, double velocity, double rotation, long turns) {
+        if (Math.abs(rotation) > 0) {
+            double speedPerRotation = velocity / rotation;
+            double rotatedHeading = enemyHeading - rotation * turns;
+            double integralX = (Math.cos(rotatedHeading) - Math.cos(enemyHeading)) * speedPerRotation;
+            double integralY = (Math.sin(rotatedHeading) - Math.sin(enemyHeading)) * speedPerRotation;
+            return new Vector2D(
+                    vecToEnemy.getX() - integralX,
+                    vecToEnemy.getY() - integralY
+            );
+        }
+        return vecToEnemy.add(Vector2D.fromPolarCoordinates(enemyHeading, velocity * turns));
     }
 
     /**
@@ -163,19 +207,10 @@ public class Prototype_Best extends RobotBase {
         }
     }
 
-    /**
-     * Setting Radar on Enemy
-     */
-    private void setRadar(double heading) {
-        double toTurnRadar = Utils.normalRelativeAngle(heading);
-        if (toTurnRadar < 0) {
-            toTurnRadar = toTurnRadar + 1;
-        } else {
-            toTurnRadar = toTurnRadar - 1;
-        }
-
-        setTurnRadarRight(toTurnRadar);
-
+    private void targetGun() {
+        double targetAngle = attackVector.angle();
+        double desiredMovement = targetAngle - Utils.normalRelativeAngle(getGunHeading());
+        setTurnGunRight(desiredMovement);
     }
 
     /**

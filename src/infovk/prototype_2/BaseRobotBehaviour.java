@@ -150,8 +150,8 @@ public abstract class BaseRobotBehaviour<T extends RobotBase> {
         return getRobot().getCache(target, index);
     }
 
-    public double getEstimatedVelocity(String target) {
-        return getRobot().getEstimatedVelocity(target);
+    public double getEstimatedVelocity(PositionalRobotCache target) {
+        return getRobot().getEstimatedAcceleration(target);
     }
 
     public void fireRelativeToEnergy(RobotInfo target, double baseVal) {
@@ -170,8 +170,8 @@ public abstract class BaseRobotBehaviour<T extends RobotBase> {
         return getRobot().getPowerRelToEnergyAndDistance(baseVal, distance);
     }
 
-    public double getEstimatedHeading(String target) {
-        return getRobot().getEstimatedHeading(target);
+    public double getEstimatedHeading(PositionalRobotCache target) {
+        return getRobot().getEstimatedRotation(target);
     }
 
     public void onDeath(DeathEvent event) {
