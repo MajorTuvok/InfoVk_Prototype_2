@@ -467,6 +467,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
             }
             return (int) b;
         }
+
     }
 
 }
