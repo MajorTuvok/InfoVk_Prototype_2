@@ -122,6 +122,23 @@ public class Prototype_Best extends RobotBase {
         setTurnGunRight(toTurnGun + correctionGun);
     }
 
+    private Vector2D evaluateTargetPoint(Graphics2D g, Vector2D enemyCoordinates, Vector2D coordinates, double direction, double velocity, int turns) {
+        if (velocity == 0) return enemyCoordinates;
+        Vector2D movement = Vector2D.fromPolarCoordinates(direction, velocity);
+        Vector2D target = enemyCoordinates.add(movement);
+        if (g != null) {
+            g.drawLine((int) Math.round(enemyCoordinates.getX()), (int) Math.round(enemyCoordinates.getY()), (int) Math.round(target.getX()), (int) Math.round(target.getY()));
+        }
+        Vector2D toTarget = coordinates.subtract(target);
+
+        double targetDis = toTarget.length();
+        double speed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, targetDis));
+
+        Vector2D bulletMovement = toTarget.normalize().multiply(turns * speed);
+        if (bulletMovement.length() >= targetDis || turns > 10) return toTarget;
+        return evaluateTargetPoint(g, target, coordinates, direction, velocity, turns + 1);
+    }
+
     /**
      * Dodging Bullet, depends on Enemy`s Energy, could triggered by EnergyLoss from hitting Walls or Robots
      */
@@ -226,23 +243,6 @@ public class Prototype_Best extends RobotBase {
         }
         dodgeWall(distance);
         //System.out.println("distance=" + distance);
-    }
-
-    private Vector2D evaluateTargetPoint(Graphics2D g, Vector2D enemyCoordinates, Vector2D coordinates, double direction, double velocity, int turns) {
-        if (velocity == 0) return enemyCoordinates;
-        Vector2D movement = Vector2D.fromPolarCoordinates(direction, velocity);
-        Vector2D target = enemyCoordinates.add(movement);
-        if (g != null) {
-            g.drawLine((int) Math.round(enemyCoordinates.getX()), (int) Math.round(enemyCoordinates.getY()), (int) Math.round(target.getX()), (int) Math.round(target.getY()));
-        }
-        Vector2D toTarget = coordinates.subtract(target);
-
-        double targetDis = toTarget.length();
-        double speed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, targetDis));
-
-        Vector2D bulletMovement = toTarget.normalize().multiply(turns * speed);
-        if (bulletMovement.length() >= targetDis || turns > 10) return toTarget;
-        return evaluateTargetPoint(g, target, coordinates, direction, velocity, turns + 1);
     }
 
     /**
