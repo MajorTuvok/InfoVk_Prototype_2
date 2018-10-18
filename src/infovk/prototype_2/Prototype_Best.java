@@ -112,7 +112,7 @@ public class Prototype_Best extends RobotBase {
 		g.fillRect((int)(this.getX()-this.getWidth()/2+6), (int)(this.getY()-this.getWidth()/2+10), 24, 16);
 		g.fillRect((int)(this.getX()-this.getWidth()/2+8), (int)(this.getY()-this.getWidth()/2+8), 20, 20);
 		g.setColor(Color.white);
-		g.fillRect((int)(this.getX()+2), (int)(this.getY()+2), 6, 6)
+        g.fillRect((int) (this.getX() + 2), (int) (this.getY() + 2), 6, 6);
     }
 
     /**
