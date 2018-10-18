@@ -1,5 +1,6 @@
 package infovk.prototype_2.helper;
 
+import infovk.prototype_2.BehaviourType;
 import infovk.prototype_2.RobotBase.BulletManager;
 
 import java.io.IOException;
@@ -12,10 +13,12 @@ import java.util.stream.Stream;
 public class BulletSerializer {
     private static final String KEY_COMMENT = "#";
     private static final String KEY_NAME = "name";
+    private static final String KEY_BEHAVIOUR = "behave";
     private static final String KEY_HIT = "hit";
     private static final String KEY_MISSED = "missed";
     private static final String KEY_SHIELDED = "shielded";
     private static final String KEY_NEW_ENTRY = "******************************";
+    private static final String KEY_NEW_BEHAVIOUR = "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
     private static final String KEY_VAL = "=";
     private static final List<String> VALID_KEYS = Collections.unmodifiableList(Stream.of(KEY_NAME, KEY_HIT, KEY_MISSED, KEY_SHIELDED).collect(Collectors.toList()));
 
@@ -26,20 +29,25 @@ public class BulletSerializer {
         targets.addAll(view.getShieldedBullets().keySet());
         targets.addAll(view.getMissedBullets().keySet());
         for (String s : targets) {
-            serializeBullets(stream, manager, s);
+            serializeBullets(stream, view, s);
         }
     }
 
-    public static void serializeBullets(PrintStream stream, BulletManager manager, String target) {
+    public static void serializeBullets(PrintStream stream, BulletView view, String target) {
         stream.println(KEY_NEW_ENTRY);
-        BulletView view = manager.getView();
-        int missed = view.getMissedBullets().getOrDefault(target, 0);
-        int hit = view.getHitBullets().getOrDefault(target, 0);
-        int shielded = view.getShieldedBullets().getOrDefault(target, 0);
         printVal(stream, KEY_NAME, target);
-        printVal(stream, KEY_MISSED, missed);
-        printVal(stream, KEY_HIT, hit);
-        printVal(stream, KEY_SHIELDED, shielded);
+        for (BehaviourType type : BehaviourType.values()) {
+            printBehaviourType(stream, view, target, type);
+        }
+    }
+
+    private static void printBehaviourType(PrintStream stream, BulletView view, String target, BehaviourType type) {
+        stream.println(KEY_NEW_BEHAVIOUR);
+        printVal(stream, KEY_BEHAVIOUR, type.toString());
+        printVal(stream, KEY_MISSED, view.getMissedBullets(target, type));
+        printVal(stream, KEY_HIT, view.getHitBullets(target, type));
+        printVal(stream, KEY_SHIELDED, view.getShieldedBullets(target, type));
+        stream.println(KEY_NEW_BEHAVIOUR);
     }
 
     private static void printVal(PrintStream stream, String key, int value) {
@@ -65,28 +73,14 @@ public class BulletSerializer {
 
     private static boolean deserializeTarget(LineNumberReader stream, BulletView viewInConstruction) throws IOException {
         String read = stream.readLine();
-        String name = null;
-        Integer hits = null;
-        Integer missed = null;
-        Integer shielded = null;
-        while (read != null && !read.startsWith(KEY_NEW_ENTRY)) {
-            if (read.startsWith(KEY_COMMENT)) continue;
-            if (read.startsWith(KEY_HIT)) {
-                if (hits != null) continue;
-                hits = readIntegerOrNull(getValPart(read));
-            } else if (read.startsWith(KEY_MISSED)) {
-                if (missed != null) continue;
-                missed = readIntegerOrNull(getValPart(read));
-            } else if (read.startsWith(KEY_SHIELDED)) {
-                if (shielded != null) continue;
-                shielded = readIntegerOrNull(getValPart(read));
-            } else if (read.startsWith(KEY_NAME) && name == null) {
-                name = getValPart(read);
-            }
-            read = stream.readLine();
-        }
+        if (read == null) return false;
+        String name = getValPart(read);
+        Map<BehaviourType, Integer> hits = new EnumMap<>(BehaviourType.class);
+        Map<BehaviourType, Integer> missed = new EnumMap<>(BehaviourType.class);
+        Map<BehaviourType, Integer> shielded = new EnumMap<>(BehaviourType.class);
+        while (readBehaviour(stream, hits, missed, shielded)) ;
         injectTargetValues(viewInConstruction, name, hits, missed, shielded);
-        return read != null;
+        return true;
     }
 
     private static boolean readToNewEntry(LineNumberReader stream) throws IOException {
@@ -111,8 +105,37 @@ public class BulletSerializer {
         return index > 0 && s.length() > index ? s.substring(index) : "";
     }
 
-    private static void injectTargetValues(BulletView viewInConstruction, String name, Integer hits, Integer missed, Integer shielded) {
-        if (name == null || hits == null || missed == null || shielded == null) return;
+    private static boolean readBehaviour(LineNumberReader stream, Map<BehaviourType, Integer> hitMap, Map<BehaviourType, Integer> missedMap, Map<BehaviourType, Integer> shieldedMap) throws IOException {
+        String read = stream.readLine();
+        if (read == null || !read.startsWith(KEY_NEW_BEHAVIOUR)) return false;
+        read = stream.readLine();
+        BehaviourType type = null;
+        Integer hits = 0;
+        Integer missed = 0;
+        Integer shielded = 0;
+        while (read != null && !read.startsWith(KEY_NEW_BEHAVIOUR)) {
+            if (read.startsWith(KEY_COMMENT)) continue;
+            if (read.startsWith(KEY_HIT)) {
+                hits = readIntegerOrNull(getValPart(read));
+            } else if (read.startsWith(KEY_MISSED)) {
+                missed = readIntegerOrNull(getValPart(read));
+            } else if (read.startsWith(KEY_SHIELDED)) {
+                shielded = readIntegerOrNull(getValPart(read));
+            } else if (read.startsWith(KEY_BEHAVIOUR)) {
+                if (type != null) continue;
+                type = BehaviourType.valueOf(getValPart(read));
+            }
+            read = stream.readLine();
+        }
+        if (type != null) {
+            hitMap.put(type, hits);
+            missedMap.put(type, missed);
+            shieldedMap.put(type, shielded);
+        }
+        return read != null;
+    }
+
+    private static void injectTargetValues(BulletView viewInConstruction, String name, Map<BehaviourType, Integer> hits, Map<BehaviourType, Integer> missed, Map<BehaviourType, Integer> shielded) {
         viewInConstruction.getHitBullets().put(name, hits);
         viewInConstruction.getMissedBullets().put(name, missed);
         viewInConstruction.getShieldedBullets().put(name, shielded);

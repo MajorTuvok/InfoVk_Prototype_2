@@ -3,6 +3,7 @@ package infovk.prototype_2;
 import infovk.prototype_2.helper.*;
 import infovk.prototype_2.helper.BulletCache.PositionalBulletCache;
 import infovk.prototype_2.helper.BulletCache.TargetedBulletCache;
+import infovk.prototype_2.helper.Point;
 import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
 import robocode.Bullet;
 import robocode.BulletHitBulletEvent;
@@ -23,6 +24,8 @@ import java.util.*;
 
 public abstract class RobotBase extends SimpleRobot implements Constants {
     private static final String BULLET_HISTORY = "bullets.stats";
+    private static final double ANGLE_FACTOR = 0.5;
+    private static final int MAX_TURN_ANGLE = 90;
     private double energyPowerFactor;
     private double disFactor;
     private BulletManager mBulletManager;
@@ -161,6 +164,12 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         getColorHandler().rainbow();
     }
 
+    @Override
+    public void onRobotDeath(RobotDeathEvent event) {
+        super.onRobotDeath(event);
+        BulletSerializer.serializeBullets(System.out, mBulletManager.getView(), event.getName());
+    }
+
     protected PositionalRobotCache getRecentCache(String target) {
         return mRobotHistory.getRecentCacheForTarget(target);
     }
@@ -168,6 +177,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
     protected PositionalRobotCache getCache(String target, int index) {
         return mRobotHistory.getCache(target, index);
     }
+
 
     protected double getEstimatedVelocity(String target) {
         Set<PositionalRobotCache> caches = mRobotHistory.getCompleteCacheForTarget(target);
@@ -202,10 +212,22 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
         return super.setFireBullet(power);
     }
 
-    @Override
-    public void onRobotDeath(RobotDeathEvent event) {
-        super.onRobotDeath(event);
-        BulletSerializer.serializeBullets(System.out, mBulletManager, event.getName());
+    protected double getEstimatedHeading(String target) {
+        PositionalRobotCache cur = getRecentCache(target);
+        PositionalRobotCache last = getCache(target, 1);
+        if (cur == null) {
+            return 0;
+        }
+        if (last == null) {
+            return cur.getHeading();
+        }
+        Point moved = cur.getTargetInfo().getPos().subtract(last.getTargetInfo().getPos());
+        Point dir = Point.fromPolarCoordinates(cur.getHeading(), 1);
+        double angle = Utils.normalRelativeAngle(moved.angleFrom(dir));
+        if (angle > MAX_TURN_ANGLE || angle < -MAX_TURN_ANGLE) {
+            return cur.getHeading();
+        }
+        return cur.getHeading() + angle * ANGLE_FACTOR;
     }
 
     @Override
@@ -236,9 +258,9 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
 
     public final class BulletManager {
         private final Set<PositionalBulletCache> mBullets;
-        private final Map<String, Integer> mHitBullets;
-        private final Map<String, Integer> mMissedBullets;
-        private final Map<String, Integer> mShieldedBullets;
+        private final Map<String, Map<BehaviourType, Integer>> mHitBullets;
+        private final Map<String, Map<BehaviourType, Integer>> mMissedBullets;
+        private final Map<String, Map<BehaviourType, Integer>> mShieldedBullets;
         private final BulletView mView;
 
         private BulletManager() {
@@ -324,9 +346,9 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
                 }
             }
             if (hitTarget) {
-                incrementHitBullets(e.getName());
+                incrementHitBullets(e.getName(), RobotBase.this.getBehaviourType());
             } else {
-                incrementMissedBullets(e.getName());
+                incrementMissedBullets(e.getName(), RobotBase.this.getBehaviourType());
             }
         }
 
@@ -344,7 +366,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
                 System.err.println("Because Cached Bullet (which hit another Bullet) was not registered with a target, cannot determine Targeting Statistic!");
                 return;
             }
-            incrementShieldedBullets(((TargetedBulletCache) cache).getTarget().getName());
+            incrementShieldedBullets(((TargetedBulletCache) cache).getTarget().getName(), RobotBase.this.getBehaviourType());
         }
 
         private void onBulletMissed(BulletMissedEvent e) {
@@ -361,7 +383,7 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
                 System.err.println("Because Cached Bullet (which missed) was not registered with a target, cannot determine Targeting Statistic!");
                 return;
             }
-            incrementMissedBullets(((TargetedBulletCache) cache).getTarget().getName());
+            incrementMissedBullets(((TargetedBulletCache) cache).getTarget().getName(), RobotBase.this.getBehaviourType());
         }
 
         private PositionalBulletCache getCacheForBullet(Bullet bullet) {
@@ -376,16 +398,22 @@ public abstract class RobotBase extends SimpleRobot implements Constants {
             return cache;
         }
 
-        private void incrementHitBullets(String target) {
-            mHitBullets.put(target, mHitBullets.getOrDefault(target, 0) + 1);
+        private void incrementHitBullets(String target, BehaviourType type) {
+            Map<BehaviourType, Integer> map = mHitBullets.getOrDefault(target, new EnumMap<>(BehaviourType.class));
+            map.put(type, map.getOrDefault(type, 0) + 1);
+            mHitBullets.put(target, map);
         }
 
-        private void incrementMissedBullets(String target) {
-            mMissedBullets.put(target, mMissedBullets.getOrDefault(target, 0) + 1);
+        private void incrementMissedBullets(String target, BehaviourType type) {
+            Map<BehaviourType, Integer> map = mMissedBullets.getOrDefault(target, new EnumMap<>(BehaviourType.class));
+            map.put(type, map.getOrDefault(type, 0) + 1);
+            mMissedBullets.put(target, map);
         }
 
-        private void incrementShieldedBullets(String target) {
-            mShieldedBullets.put(target, mShieldedBullets.getOrDefault(target, 0) + 1);
+        private void incrementShieldedBullets(String target, BehaviourType type) {
+            Map<BehaviourType, Integer> map = mShieldedBullets.getOrDefault(target, new EnumMap<>(BehaviourType.class));
+            map.put(type, map.getOrDefault(type, 0) + 1);
+            mShieldedBullets.put(target, map);
         }
     }
 

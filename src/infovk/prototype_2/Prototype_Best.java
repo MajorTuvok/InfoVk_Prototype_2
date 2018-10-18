@@ -126,7 +126,7 @@ public class Prototype_Best extends RobotBase {
      * Redirecting and correcting Gun toward Enemy, still uncorrect
      */
     private void targetGun(PositionalRobotCache cache, Point distance, Point enemyCoordinates, Point coordinates, double bearing, double distanceToEnemy) {
-        double direction = cache.getHeading();
+        double direction = getEstimatedHeading(cache.getName());
 
         double turnGun = bearing - getGunHeading();
         double toTurnGun = Utils.normalRelativeAngle(turnGun);
