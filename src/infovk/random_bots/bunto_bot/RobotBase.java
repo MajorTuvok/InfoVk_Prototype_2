@@ -32,6 +32,7 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
     private RobotHistory mRobotHistory;
     private ColorHandler mColorHandler;
     private BaseRobotBehaviour<?> behavior = null;
+    private StatusEvent status = null;
 
     public RobotBase() {
         setEnergyPowerFactor(40);
@@ -160,7 +161,6 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
     @Override
     public void onRobotDeath(RobotDeathEvent event) {
         super.onRobotDeath(event);
-        //BulletSerializer.serializeBullets(System.out, mBulletManager.getView(), event.getName());
         if (behavior != null) behavior.onRobotDeath(event);
     }
 
@@ -172,10 +172,9 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
     }
 
     @Override
-    public void onRoundEnded(RoundEndedEvent event) {
-        super.onRoundEnded(event);
-        writeBulletHistory();
-        if (behavior != null) behavior.onRoundEnded(event);
+    public double getX() {
+        if (status != null) return status.getStatus().getX();
+        return super.getX();
     }
 
     protected PositionalRobotCache getRecentCache(String target) {
@@ -191,6 +190,26 @@ public abstract class RobotBase extends AdvancedRobot implements Constants {
         super.onDeath(event);
         BulletSerializer.serializeBullets(System.out, mBulletManager);
         if (behavior != null) behavior.onDeath(event);
+    }
+
+    @Override
+    public double getY() {
+        if (status != null) return status.getStatus().getY();
+        return super.getY();
+    }
+
+    @Override
+    public void onRoundEnded(RoundEndedEvent event) {
+        super.onRoundEnded(event);
+        writeBulletHistory();
+        if (behavior != null) behavior.onRoundEnded(event);
+        BulletSerializer.serializeBullets(System.out, mBulletManager);
+    }
+
+    @Override
+    public void onStatus(StatusEvent e) {
+        super.onStatus(e);
+        status = e;
     }
 
     protected void fireRelativeToEnergy(RobotInfo target, double baseVal) {

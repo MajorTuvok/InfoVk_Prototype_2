@@ -21,6 +21,8 @@ public class BuntoBot extends RobotBase {
     private double lowerBorder = 0;
     private double rightBorder = Double.MAX_VALUE;
     private double upperBorder = Double.MAX_VALUE;
+    private double enemyBearingBorder = 20;
+    private int minContinuousMovement = 10;
     private long time;
     private boolean positiveMovement;
     private Vector2D attackVector = null;
@@ -109,7 +111,6 @@ public class BuntoBot extends RobotBase {
         target = event.getName();
         if (target == null) return;
         performFire();
-
         PositionalRobotCache cache = getRecentCache(target);
         double absoluteBearing = RobotHelper.absoluteBearing(this, cache.getBearing());
         PositionalRobotCache lastValue = getCache(target, 1);
@@ -131,6 +132,47 @@ public class BuntoBot extends RobotBase {
         fireRelativeToEnergyAndDistance(cache.getTargetInfo(), 3, attackVector.length());
     }
 
+    /**
+     * Testing if Movement possible
+     */
+    @Override
+    public void setAhead(double distance) {
+
+        if (getTime() > time + minContinuousMovement) {
+            if (distance > 0 && !positiveMovement) {
+                positiveMovement = true;
+                time = getTime();
+            } else if (distance < 0 && positiveMovement) {
+                positiveMovement = false;
+                time = getTime();
+            }
+
+        }
+        if (positiveMovement) {
+            distance = Math.abs(distance);
+        } else {
+            distance = Math.abs(distance) * -1;
+        }
+        dodgeWall(distance);
+        //System.out.println("distance=" + distance);
+    }
+
+    /**
+     * Change Position after Hit by Enemy
+     */
+    @Override
+    public void onHitByBullet(HitByBulletEvent event) {
+        super.onHitByBullet(event);
+        double absoluteBearing = getHeading() + event.getBearing();
+        setTurnRight(absoluteBearing);
+        double move = randomFixedRange(50, 75, 75, 100);
+        boolean backward = RobotHelper.RANDOM.nextBoolean();
+        if (backward) {
+            move = move * -1;
+        }
+        setAhead(move);
+    }
+
     private void evaluateAttackVector(PositionalRobotCache cache, Vector2D vecToEnemy) {
         double velocity = cache.getVelocity();
         double rotation = getEstimatedRotation(cache);
@@ -139,50 +181,9 @@ public class BuntoBot extends RobotBase {
         attackVector = vecToEnemy;
         double distance = attackVector.length();
         double bulletSpeed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, distance));
-        long newMovedTurns = Math.round(distance / bulletSpeed);
+        double newMovedTurns = distance / bulletSpeed;
 
         defineAttackVectorMorePrecisely(vecToEnemy, newMovedTurns, velocity, rotation, startHeading);
-    }
-
-    private void defineAttackVectorMorePrecisely(Vector2D vecToEnemy, long newMovedTurns, double velocity, double rotation, double startHeading) {
-        int iterationCounter = 0;
-        long enemyMovedTurns;
-        double distance;
-        double bulletSpeed;
-        do {
-            enemyMovedTurns = newMovedTurns;
-            attackVector = getFastEnemyPredictedPosition(vecToEnemy, startHeading, velocity, rotation, enemyMovedTurns);
-            distance = attackVector.length();
-            bulletSpeed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, distance));
-            newMovedTurns = (long) Math.ceil(distance / bulletSpeed);
-            ++iterationCounter;
-        }
-        while (newMovedTurns - enemyMovedTurns > 1); //if we are correcting less then 5 turns, it should be good
-        System.out.println("Evaluated Targeting with " + iterationCounter + " iterations");
-    }
-
-    /*
-      Our original Method of Predicting the enemies position was too slow (manually retracing every of our enemies future steps), so we tried doing some Math and here it is,
-      the ultimate fast Enemy position Prediction. How do you get it (x-Coord):
-         enemyMovedVec = enemyVec + sum[0; turns](velocity*sin(enemyHeading+rotation*i))
-      The sum now collects all values of velocity*sin(enemyHeading+rotation*i) until turns. Because turns are the smallest possible units, this is essentially an Integral.
-      <=>enemyMovedVec = enemyVec + integral(velocity*sin(enemyHeading+rotation)
-      And Bronstein then tells us the integral shown below in the Mehtod
-      !!!!!:
-      Notice however, that acceleration no longer is taken into account, but because we are estimating
-     */
-    private Vector2D getFastEnemyPredictedPosition(Vector2D vecToEnemy, double enemyHeading, double velocity, double rotation, long turns) {
-        if (Math.abs(rotation) > 0) {
-            double speedPerRotation = velocity / rotation;
-            double rotatedHeading = enemyHeading - rotation * turns;
-            double integralX = (Math.cos(rotatedHeading) - Math.cos(enemyHeading)) * speedPerRotation;
-            double integralY = (Math.sin(rotatedHeading) - Math.sin(enemyHeading)) * speedPerRotation;
-            return new Vector2D(
-                    vecToEnemy.getX() - integralX,
-                    vecToEnemy.getY() - integralY
-            );
-        }
-        return vecToEnemy.add(Vector2D.fromPolarCoordinates(enemyHeading, velocity * turns));
     }
 
     /**
@@ -228,20 +229,27 @@ public class BuntoBot extends RobotBase {
         return movement;
     }
 
-    /**
-     * Change Position after Hit by Enemy
-     */
-    @Override
-    public void onHitByBullet(HitByBulletEvent event) {
-        super.onHitByBullet(event);
-        double absoluteBearing = getHeading() + event.getBearing();
-        setTurnRight(absoluteBearing);
-        double move = RobotHelper.RANDOM.nextDouble() * 99 + 1;
-        double random = RobotHelper.RANDOM.nextInt();
-        if (random > 0.5) {
-            move = move * -1;
+    private void defineAttackVectorMorePrecisely(Vector2D vecToEnemy, double newMovedTurns, double velocity, double rotation, double startHeading) {
+        if (!Utils.isNear(velocity, 0)) {
+            int iterationCounter = 0;
+            double enemyMovedTurns;
+            double distance;
+            double bulletSpeed;
+            Vector2D enemyVector = attackVector;
+            do {
+                enemyMovedTurns = newMovedTurns;
+                enemyVector = getFastEnemyPredictedPosition(vecToEnemy, startHeading, velocity, rotation, enemyMovedTurns);
+                distance = enemyVector.length();
+                bulletSpeed = Rules.getBulletSpeed(getPowerRelToEnergyAndDistance(3, distance));
+                newMovedTurns = distance / bulletSpeed;
+                ++iterationCounter;
+            }
+            while (Math.abs(newMovedTurns - enemyMovedTurns) > 0.1 && iterationCounter < 7); //if we are correcting less then 10% of a Turn, it should be good
+            attackVector = enemyVector;
+            if (DEBUG) System.out.println("Evaluated Targeting with " + iterationCounter + " iterations");
+        } else if (DEBUG) {
+            System.out.println("No need to evaluate AttackVector more precisely, because the enemy isn't moving at all");
         }
-        setAhead(move);
     }
 
     /**
@@ -255,31 +263,28 @@ public class BuntoBot extends RobotBase {
 
     }
 
-
-    /**
-     * Testing if Movement possible
+    /*
+      Our original Method of Predicting the enemies position was too slow (manually retracing every of our enemies future steps), so we tried doing some Math and here it is,
+      the ultimate fast Enemy position Prediction. How do you get it (x-Coord):
+         enemyMovedVec = enemyVec + sum[0; turns](velocity*sin(enemyHeading+rotation*i))
+      The sum now collects all values of velocity*sin(enemyHeading+rotation*i) until turns. Because turns are the smallest possible units, this is essentially an Integral.
+      <=>enemyMovedVec = enemyVec + integral(velocity*sin(enemyHeading+rotation)
+      And Bronstein then tells us the integral shown below in the Method...
+      !!!!!:
+      Notice however, that acceleration no longer is taken into account, but because we are estimating
      */
-    @Override
-    public void setAhead(double distance) {
-
-        if (getTime() > time + 10) {
-            if (distance > 0) {
-                positiveMovement = true;
-            } else {
-                positiveMovement = false;
-            }
-            time = getTime();
-
-        } else {
-            if (positiveMovement) {
-                distance = Math.abs(distance);
-            } else {
-                distance = Math.abs(distance) * -1;
-            }
-
+    private Vector2D getFastEnemyPredictedPosition(Vector2D vecToEnemy, double enemyHeading, double velocity, double rotation, double turns) {
+        if (Math.abs(rotation) > 0) {
+            double speedPerRotation = velocity / rotation;
+            double rotatedHeading = enemyHeading - rotation * turns;
+            double integralX = (Math.cos(rotatedHeading) - Math.cos(enemyHeading)) * speedPerRotation;
+            double integralY = (Math.sin(rotatedHeading) - Math.sin(enemyHeading)) * speedPerRotation;
+            return new Vector2D(
+                    vecToEnemy.getX() - integralX,
+                    vecToEnemy.getY() - integralY
+            );
         }
-        dodgeWall(distance);
-        //System.out.println("distance=" + distance);
+        return vecToEnemy.add(Vector2D.fromPolarCoordinates(enemyHeading, velocity * turns));
     }
 
     /**
@@ -319,7 +324,6 @@ public class BuntoBot extends RobotBase {
      * Dodging Robot
      */
     private void dodgeRobot(double distance) {
-
         double x = getX();
         double y = getY();
 
@@ -329,13 +333,18 @@ public class BuntoBot extends RobotBase {
             PositionalRobotCache enemyCoordinates = entry.getValue();
             double xEnemy = enemyCoordinates.getTargetInfo().getX();
             double yEnemy = enemyCoordinates.getTargetInfo().getY();
-
+            double enemyBearing = enemyCoordinates.getBearing();
+            double allowedHeadingUpper = 90 + enemyBearingBorder;
+            double allowedHeadingLower = 90 - enemyBearingBorder;
             if (MIN_ROBOT_DISTANCE > Math.sqrt(((x - xEnemy) * (x - xEnemy)) + ((y - yEnemy) * (y - yEnemy)))) {
-                setTurnRight(RobotHelper.RANDOM.nextBoolean() ? 90 : -90);
-                super.setAhead(distance * -1);
-            } else {
+                if (!((getHeading() <= enemyBearing + allowedHeadingUpper && getHeading() >= enemyBearing + allowedHeadingLower) ||
+                        (getHeading() >= enemyBearing - allowedHeadingUpper && getHeading() <= enemyBearing - allowedHeadingLower))) {
+                    setTurnRight(enemyCoordinates.getBearing() + (RobotHelper.RANDOM.nextBoolean() ? 90 : -90));
+                }
                 super.setAhead(distance);
+                return;
             }
+            super.setAhead(distance);
         }
 
 
