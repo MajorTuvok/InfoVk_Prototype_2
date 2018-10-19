@@ -1,10 +1,10 @@
 
-package infovk.prototype_2;
+package infovk.random_bots.bunto_bot;
 
 
-import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
-import infovk.prototype_2.helper.RobotHelper;
-import infovk.prototype_2.helper.Vector2D;
+import infovk.random_bots.bunto_bot.helper.RobotCache.PositionalRobotCache;
+import infovk.random_bots.bunto_bot.helper.RobotHelper;
+import infovk.random_bots.bunto_bot.helper.Vector2D;
 import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
@@ -14,7 +14,7 @@ import robocode.ScannedRobotEvent;
 import java.awt.*;
 import java.util.Map;
 
-public class Prototype_Best extends RobotBase {
+public class BuntoBot extends RobotBase {
     private static final int MIN_ROBOT_DISTANCE = 100;
     private static final double MIN_WALL_PERCENTAGE = 0.5;
     private double leftBorder = 0;
@@ -157,7 +157,7 @@ public class Prototype_Best extends RobotBase {
             newMovedTurns = (long) Math.ceil(distance / bulletSpeed);
             ++iterationCounter;
         }
-        while (newMovedTurns - enemyMovedTurns > 2); //if we are correcting less then 5 turns, it should be good
+        while (newMovedTurns - enemyMovedTurns > 1); //if we are correcting less then 5 turns, it should be good
         System.out.println("Evaluated Targeting with " + iterationCounter + " iterations");
     }
 

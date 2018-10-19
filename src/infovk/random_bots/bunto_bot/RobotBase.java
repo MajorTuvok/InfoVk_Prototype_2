@@ -1,9 +1,9 @@
-package infovk.prototype_2;
+package infovk.random_bots.bunto_bot;
 
-import infovk.prototype_2.helper.*;
-import infovk.prototype_2.helper.BulletCache.PositionalBulletCache;
-import infovk.prototype_2.helper.BulletCache.TargetedBulletCache;
-import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
+import infovk.random_bots.bunto_bot.helper.*;
+import infovk.random_bots.bunto_bot.helper.BulletCache.PositionalBulletCache;
+import infovk.random_bots.bunto_bot.helper.BulletCache.TargetedBulletCache;
+import infovk.random_bots.bunto_bot.helper.RobotCache.PositionalRobotCache;
 import robocode.*;
 import robocode.Bullet;
 import robocode.BulletHitBulletEvent;

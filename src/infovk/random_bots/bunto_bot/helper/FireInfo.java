@@ -1,4 +1,4 @@
-package infovk.prototype_2.helper;
+package infovk.random_bots.bunto_bot.helper;
 
 public final class FireInfo {
     private final double mPower;

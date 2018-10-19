@@ -1,7 +1,7 @@
-package infovk.prototype_2.helper;
+package infovk.random_bots.bunto_bot.helper;
 
-import infovk.prototype_2.BehaviourType;
-import infovk.prototype_2.helper.BulletCache.PositionalBulletCache;
+import infovk.random_bots.bunto_bot.BehaviourType;
+import infovk.random_bots.bunto_bot.helper.BulletCache.PositionalBulletCache;
 
 import java.util.Map;
 import java.util.Set;

@@ -1,6 +1,6 @@
-package infovk.prototype_2;
+package infovk.random_bots.bunto_bot;
 
-import infovk.prototype_2.helper.Vector2D;
+import infovk.random_bots.bunto_bot.helper.Vector2D;
 import robocode.AdvancedRobot;
 
 import java.awt.*;

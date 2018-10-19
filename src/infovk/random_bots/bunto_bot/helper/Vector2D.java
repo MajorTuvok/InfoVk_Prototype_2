@@ -1,4 +1,4 @@
-package infovk.prototype_2.helper;
+package infovk.random_bots.bunto_bot.helper;
 
 /**
  * An immutable vector in two dimensional space over doubles.

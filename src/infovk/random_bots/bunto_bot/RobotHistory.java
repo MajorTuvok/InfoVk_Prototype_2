@@ -1,8 +1,8 @@
-package infovk.prototype_2;
+package infovk.random_bots.bunto_bot;
 
-import infovk.prototype_2.helper.RobotCache;
-import infovk.prototype_2.helper.RobotCache.PositionalRobotCache;
-import infovk.prototype_2.helper.Tuple;
+import infovk.random_bots.bunto_bot.helper.RobotCache;
+import infovk.random_bots.bunto_bot.helper.RobotCache.PositionalRobotCache;
+import infovk.random_bots.bunto_bot.helper.Tuple;
 import robocode.Robot;
 import robocode.ScannedRobotEvent;
 

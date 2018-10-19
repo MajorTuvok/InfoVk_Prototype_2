@@ -1,4 +1,4 @@
-package infovk.prototype_2;
+package infovk.random_bots.bunto_bot;
 
 import static java.lang.Math.PI;
 
